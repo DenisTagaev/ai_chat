@@ -6,6 +6,7 @@ import validator from "validator";
 import { createClient } from "redis";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
 import { StreamUser } from "./utils/interfaces.js";
+import generateUserId from "./utils/idGenerator.js";
 
 dotenv.config();
 
@@ -65,10 +66,11 @@ app.post(
       // store cooldown to prevent repeated registration
       await redisClient.setEx(recentAttemptKey, 10, "1");
 
+      const userId: string = generateUserId(sanitizedEmail);
       const existingUser: APIResponse & {
         users: Array<UserResponse>;
       } = await streamChatClient.queryUsers({
-        id: sanitizedEmail,
+        id: { $eq: userId },
       });
 
       if (existingUser.users.length > 0) {
@@ -77,7 +79,8 @@ app.post(
 
       //create new user in Stream Chat
       const user: StreamUser = {
-        id: sanitizedEmail,
+        id: userId,
+        email: sanitizedEmail,
         name,
         role: "user",
       };
@@ -89,12 +92,12 @@ app.post(
         JSON.stringify(user)
       );
       //respond with success
-        const token: string = streamChatClient.createToken(sanitizedEmail);
-        return res.status(201).json({
-            message: "User registered successfully.",
-            user,
-            token,
-        });
+      const token: string = streamChatClient.createToken(userId);
+      return res.status(201).json({
+          message: "User registered successfully.",
+          user: { id: userId, name},
+          token,
+      });
 
     } catch (error: any) {
       console.error("Registration Error:", error);
