@@ -3,10 +3,12 @@ import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
 import validator from "validator";
+import OpenAI from "openai";
 import { createClient } from "redis";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
 import { StreamUser } from "./utils/interfaces.js";
 import generateUserId from "./utils/idGenerator.js";
+import { error } from "console";
 
 dotenv.config();
 
@@ -16,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded( { extended: false}));
 
+//** Streamchat API related content */
 const streamChatClient: StreamChat = StreamChat.getInstance(
   process.env.STREAM_API_KEY!,
   process.env.STREAM_API_SECRET!
@@ -26,6 +29,13 @@ const registerLimiter: RateLimitRequestHandler = rateLimit({
   max: 5, // limit each IP to 5 registration attempts per minute
   message: "Too many registration attempts. Please try again later.",
 });
+//**--> End of Streamchat API content */
+
+//** OpenAI API related content */
+const openAiClient: OpenAI = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+//**--> End of OpenAI API content */
 
 app.post(
     '/user-register',
@@ -78,18 +88,18 @@ app.post(
       }
 
       //create new user in Stream Chat
-      const user: StreamUser = {
+      const newUser: StreamUser = {
         id: userId,
         email: sanitizedEmail,
         name,
         role: "user",
       };
 
-      await streamChatClient.upsertUser(user as UserResponse);
+      await streamChatClient.upsertUser(newUser as UserResponse);
       await redisClient.setEx(
         `user:${sanitizedEmail}`,
         3600,
-        JSON.stringify(user)
+        JSON.stringify(newUser)
       );
       //respond with success
       const token: string = streamChatClient.createToken(userId);
@@ -104,6 +114,35 @@ app.post(
       return res.status(500).json({ error: "Internal Server Error" });
     }
 })
+
+app.post('/ai-chat', 
+  async(req: Request, res: Response): Promise<any>=> {
+    const { message, userId } = req.body;
+
+    try {
+      if (!message || !userId) {
+        return res
+          .status(400)
+          .json({ error: "Missing required fields" });
+      }
+
+      const user: APIResponse & {
+        users: Array<UserResponse>;
+      } = await streamChatClient.queryUsers({
+        id: { $eq: userId },
+      });
+
+      if(!user.users.length){
+        return res
+          .status(404)
+          .json({ error: 'user not found'})
+      } 
+
+    } catch (error: any) {
+      console.error("Connection Error:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
