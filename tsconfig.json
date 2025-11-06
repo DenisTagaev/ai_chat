@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     // Use ECMAScript Modules (ESM) with Node.js compatibility.
-    "module": "NodeNext",
+    "module": "ESNext",
     // Controls how modules are resolved. "NodeNext" enables native ESM support.
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     // Target ECMAScript Next to enable the latest JavaScript features.
-    "target": "ESNext",
+    "target": "es2024",
     // Output directory for compiled JavaScript files (only used if "noEmit" is false).
     "outDir": "./dist",
     // Root directory for TypeScript source files.
@@ -17,7 +17,9 @@
     // Allow importing JSON files directly as modules.
     "resolveJsonModule": true,
     // Skip checking declaration files in `node_modules` to speed up compilation.
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+     "forceConsistentCasingInFileNames": true
   },
   "exclude": ["drizzle.config.ts"]
 }
