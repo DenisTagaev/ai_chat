@@ -1,14 +1,13 @@
-import express, { Request, Response } from "express";
+import express, { Request, response, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
 import validator from "validator";
 import OpenAI from "openai";
 import { createClient } from "redis";
-import { APIResponse, StreamChat, UserResponse } from "stream-chat";
+import { APIResponse, Channel, StreamChat, UserResponse } from "stream-chat";
 import { StreamUser } from "./utils/interfaces.js";
 import generateUserId from "./utils/idGenerator.js";
-import { error } from "console";
 
 dotenv.config();
 
@@ -138,6 +137,21 @@ app.post('/ai-chat',
           .json({ error: 'user not found'})
       } 
 
+      //on success send message to OpenAI
+      const result = await openAiClient.chat.completions.create({
+        model: 'chatgpt-4o-latest',
+        messages: [{ role: 'user', content: message}]
+      });
+      const aiMessage: string = result.choices[0].message?.content ?? "No response, try again later";
+
+      //open channel with ai
+      const channel: Channel = streamChatClient.channel('messaging', `chat-${userId}`, {
+        created_by_id: 'ai_bot'
+      });
+      await channel.create();
+      await channel.sendMessage({text: aiMessage, user_id: 'ai_bot'});
+
+      res.status(200).json({ reply: aiMessage });
     } catch (error: any) {
       console.error("Connection Error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
