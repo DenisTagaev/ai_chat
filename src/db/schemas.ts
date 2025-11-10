@@ -1,6 +1,20 @@
 import { pgTable, serial, varchar, text, AnyPgColumn, index, uniqueIndex, PgTableWithColumns } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns.helpers";
 
+export const users: PgTableWithColumns<any> = pgTable(
+  "users",
+  {
+    userId: varchar("user_id", { length: 256 }).primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    ...timestamps,
+  },
+  (table) => [
+    index("name_idx").on(table.name),
+    uniqueIndex("email_idx").on(table.email),
+  ]
+);
+
 export const chats: PgTableWithColumns<any> = pgTable(
   "chats",
   {
@@ -18,19 +32,6 @@ export const chats: PgTableWithColumns<any> = pgTable(
   ]
 );
 
-export const users: PgTableWithColumns<any> = pgTable(
-  "users",
-  {
-    userId: varchar("user_id", { length: 256 }).primaryKey(),
-    name: text("name").notNull(),
-    email: text("email").notNull().unique(),
-    ...timestamps,
-  },
-  (table) => [
-    index("name_idx").on(table.name),
-    uniqueIndex("email_idx").on(table.email),
-  ]
-);
 
 //Type inference for Drizzle queries
 export type ChatInsert = typeof chats.$inferInsert
