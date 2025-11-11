@@ -6,8 +6,11 @@ import validator from "validator";
 import OpenAI from "openai";
 import { createClient } from "redis";
 import { APIResponse, Channel, StreamChat, UserResponse } from "stream-chat";
+import { db } from "./config/db.js";
+import { chats, users } from "./db/schemas.js";
 import { StreamUser } from "./utils/interfaces.js";
 import generateUserId from "./utils/idGenerator.js";
+import { checkRegisteredStreamUser, checkRegisteredNeonUser } from "./utils/checkForExistingUser.js";
 
 dotenv.config();
 
@@ -76,13 +79,14 @@ app.post(
       await redisClient.setEx(recentAttemptKey, 10, "1");
 
       const userId: string = generateUserId(sanitizedEmail);
-      const existingUser: APIResponse & {
+      const existingStreamUser: APIResponse & {
         users: Array<UserResponse>;
-      } = await streamChatClient.queryUsers({
-        id: { $eq: userId },
-      });
+      } = await checkRegisteredStreamUser(userId);
+      const existingNeonUser: {
+        [x: string]: any;
+      }[] = await checkRegisteredNeonUser(userId);
 
-      if (existingUser.users.length > 0) {
+      if (existingStreamUser.users.length || existingNeonUser.length) {
         return res.status(409).json({ error: "User already registered." });
       }
 
@@ -93,8 +97,9 @@ app.post(
         name,
         role: "user",
       };
-
       await streamChatClient.upsertUser(newUser as UserResponse);
+      //create new user in cloud db
+      await db.insert(users).values({ userId, name, email });
       await redisClient.setEx(
         `user:${sanitizedEmail}`,
         3600,
@@ -107,7 +112,6 @@ app.post(
           user: { id: userId, name},
           token,
       });
-
     } catch (error: any) {
       console.error("Registration Error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
