@@ -129,16 +129,15 @@ app.post('/ai-chat',
           .json({ error: "Missing required fields" });
       }
 
-      const user: APIResponse & {
-        users: Array<UserResponse>;
-      } = await streamChatClient.queryUsers({
-        id: { $eq: userId },
-      });
+      const existingStreamUser: APIResponse & {
+          users: Array<UserResponse>;
+        } = await checkRegisteredStreamUser(userId);
+      const existingNeonUser: {
+        [x: string]: any;
+      }[] = await checkRegisteredNeonUser(userId);
 
-      if(!user.users.length){
-        return res
-          .status(404)
-          .json({ error: 'user not found'})
+      if (!existingStreamUser.users.length || !existingNeonUser.length) {
+        return res.status(404).json({ error: "user not found" });
       } 
 
       //on success send message to OpenAI
@@ -148,6 +147,9 @@ app.post('/ai-chat',
       });
       const aiMessage: string = result.choices[0].message?.content ?? "No response, try again later";
 
+      //save messages to the neondb
+      await db.insert(chats).values({ userId, message, reply: aiMessage});
+      
       //open channel with ai
       const channel: Channel = streamChatClient.channel('messaging', `chat-${userId}`, {
         created_by_id: 'ai_bot'
