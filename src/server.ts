@@ -149,7 +149,7 @@ app.post('/ai-chat',
 
       //save messages to the neondb
       await db.insert(chats).values({ userId, message, reply: aiMessage});
-      
+
       //open channel with ai
       const channel: Channel = streamChatClient.channel('messaging', `chat-${userId}`, {
         created_by_id: 'ai_bot'
@@ -162,6 +162,23 @@ app.post('/ai-chat',
       console.error("Connection Error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
+});
+
+app.post(
+  "/chat-history",
+  async (req: Request, res: Response): Promise<any> => {
+  const { userId } = req.body; 
+    try{
+      if (!userId) {
+        return res
+          .status(400)
+          .json({ error: "Missing required fields" });
+      }
+    } catch(error: any){
+      console.error("Connection Error:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+
 });
 
 const redisClient = createClient({
