@@ -7,10 +7,11 @@ import OpenAI from "openai";
 import { createClient } from "redis";
 import { APIResponse, Channel, StreamChat, UserResponse } from "stream-chat";
 import { db } from "./config/db.js";
-import { chats, users } from "./db/schemas.js";
+import { chats } from "./db/schemas.js";
 import { StreamUser } from "./utils/interfaces.js";
 import generateUserId from "./utils/idGenerator.js";
-import { checkRegisteredStreamUser, checkRegisteredNeonUser } from "./utils/checkForExistingUser.js";
+import { checkRegisteredStreamUser } from "./utils/checkForExistingUser.js";
+import { createNeonUser, getNeonUserById, getStreamChatHistoryFromDB, saveStreamChatMessageToDB } from "./db/operations.js";
 
 dotenv.config();
 
@@ -84,7 +85,7 @@ app.post(
       } = await checkRegisteredStreamUser(userId);
       const existingNeonUser: {
         [x: string]: any;
-      }[] = await checkRegisteredNeonUser(userId);
+      }[] = await getNeonUserById(userId);
 
       if (existingStreamUser.users.length || existingNeonUser.length) {
         return res.status(409).json({ error: "User already registered." });
@@ -99,7 +100,7 @@ app.post(
       };
       await streamChatClient.upsertUser(newUser as UserResponse);
       //create new user in cloud db
-      await db.insert(users).values({ userId, name, email });
+      await createNeonUser(userId, name, email);
       await redisClient.setEx(
         `user:${sanitizedEmail}`,
         3600,
@@ -134,7 +135,7 @@ app.post('/ai-chat',
         } = await checkRegisteredStreamUser(userId);
       const existingNeonUser: {
         [x: string]: any;
-      }[] = await checkRegisteredNeonUser(userId);
+      }[] = await getNeonUserById(userId);
 
       if (!existingStreamUser.users.length || !existingNeonUser.length) {
         return res.status(404).json({ error: "user not found" });
@@ -148,7 +149,7 @@ app.post('/ai-chat',
       const aiMessage: string = result.choices[0].message?.content ?? "No response, try again later";
 
       //save messages to the neondb
-      await db.insert(chats).values({ userId, message, reply: aiMessage});
+      await saveStreamChatMessageToDB( userId, message, aiMessage);
 
       //open channel with ai
       const channel: Channel = streamChatClient.channel('messaging', `chat-${userId}`, {
@@ -174,6 +175,8 @@ app.post(
           .status(400)
           .json({ error: "Missing required fields" });
       }
+      const chatHistory = await getStreamChatHistoryFromDB(userId);
+      res.status(200).json({ messages: chatHistory});
     } catch(error: any){
       console.error("Connection Error:", error);
       return res.status(500).json({ error: "Internal Server Error" });
