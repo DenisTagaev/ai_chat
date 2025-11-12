@@ -5,12 +5,9 @@ import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
 import validator from "validator";
 import OpenAI from "openai";
 import { createClient } from "redis";
-import { APIResponse, Channel, StreamChat, UserResponse } from "stream-chat";
-import { db } from "./config/db.js";
-import { chats } from "./db/schemas.js";
-import { StreamUser } from "./utils/interfaces.js";
+import { APIResponse, StreamChat, UserResponse } from "stream-chat";
 import generateUserId from "./utils/idGenerator.js";
-import { checkRegisteredStreamUser } from "./utils/checkForExistingUser.js";
+import { checkRegisteredStreamUser, createAiChatChannel, createStreamUser, sendMessageToAi } from "./services/streamChatService.js";
 import { createNeonUser, getNeonUserById, getStreamChatHistoryFromDB, saveStreamChatMessageToDB } from "./db/operations.js";
 
 dotenv.config();
@@ -92,19 +89,23 @@ app.post(
       }
 
       //create new user in Stream Chat
-      const newUser: StreamUser = {
+      await createStreamUser({
         id: userId,
         email: sanitizedEmail,
         name,
         role: "user",
-      };
-      await streamChatClient.upsertUser(newUser as UserResponse);
+      });
       //create new user in cloud db
       await createNeonUser(userId, name, email);
       await redisClient.setEx(
         `user:${sanitizedEmail}`,
         3600,
-        JSON.stringify(newUser)
+        JSON.stringify({
+          id: userId,
+          email: sanitizedEmail,
+          name,
+          role: "user",
+        })
       );
       //respond with success
       const token: string = streamChatClient.createToken(userId);
@@ -148,15 +149,12 @@ app.post('/ai-chat',
       });
       const aiMessage: string = result.choices[0].message?.content ?? "No response, try again later";
 
+      //open channel with ai
+      const channel = await createAiChatChannel(userId);
+      await sendMessageToAi(channel, aiMessage);
+
       //save messages to the neondb
       await saveStreamChatMessageToDB( userId, message, aiMessage);
-
-      //open channel with ai
-      const channel: Channel = streamChatClient.channel('messaging', `chat-${userId}`, {
-        created_by_id: 'ai_bot'
-      });
-      await channel.create();
-      await channel.sendMessage({text: aiMessage, user_id: 'ai_bot'});
 
       res.status(200).json({ reply: aiMessage });
     } catch (error: any) {
