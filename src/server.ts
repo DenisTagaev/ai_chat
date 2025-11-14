@@ -3,13 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
 import validator from "validator";
-import OpenAI from "openai";
 import { createClient } from "redis";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
 import generateUserId from "./utils/idGenerator.js";
 import { checkRegisteredStreamUser, createAiChatChannel, createStreamUser, sendMessageToAi } from "./services/streamChatService.js";
 import { createNeonUser, getNeonUserById, getStreamChatHistoryFromDB, saveStreamChatMessageToDB } from "./db/operations.js";
 import { ChatSelect } from "./db/schemas.js";
+import { getAiChatResponse } from "./services/openAiService.js";
 
 dotenv.config();
 
@@ -31,12 +31,6 @@ const registerLimiter: RateLimitRequestHandler = rateLimit({
   message: "Too many registration attempts. Please try again later.",
 });
 //**--> End of Streamchat API content */
-
-//** OpenAI API related content */
-const openAiClient: OpenAI = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-//**--> End of OpenAI API content */
 
 app.post(
     '/user-register',
@@ -144,11 +138,7 @@ app.post('/ai-chat',
       } 
 
       //on success send message to OpenAI
-      const result = await openAiClient.chat.completions.create({
-        model: 'chatgpt-4o-latest',
-        messages: [{ role: 'user', content: message}]
-      });
-      const aiMessage: string = result.choices[0].message?.content ?? "No response, try again later";
+      const aiMessage: string = await getAiChatResponse(message);
 
       //open channel with ai
       const channel = await createAiChatChannel(userId);
