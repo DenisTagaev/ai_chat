@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
-import { createClient } from "redis";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
 import { checkRegisteredStreamUser, createAiChatChannel, sendMessageToAi } from "./services/streamChatService.js";
 import { getNeonUserById, getStreamChatHistoryFromDB, saveStreamChatMessageToDB } from "./db/operations.js";
@@ -119,14 +118,6 @@ app.post(
   }
 
 });
-
-const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
-
-redisClient.on("error", (err) => console.log("Redis Client Error", err));
-
-await redisClient.connect();
 
 const PORT = process.env.PORT || 3000;
 

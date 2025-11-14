@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import validator from "validator";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
-import { createClient } from "redis";
-
+import { redisService } from "../services/redisService.js";
 import generateUserId from "../utils/idGenerator.js";
 import {
   checkRegisteredStreamUser,
@@ -10,12 +9,6 @@ import {
 } from "../services/streamChatService.js";
 import { createNeonUser, getNeonUserById } from "../db/operations.js";
 
-// Init redis 
-const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
-
-redisClient.connect();
 
 // Init StreamChat client
 const streamChatClient: StreamChat = StreamChat.getInstance(
@@ -47,7 +40,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
 
     // Rate limit per email for cooldown
     const recentAttemptKey: string = `register:${sanitizedEmail}`;
-    const recentAttempt: string | null = await redisClient.get(
+    const recentAttempt: string | null = await redisService.get(
       recentAttemptKey
     );
 
@@ -57,7 +50,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
       });
     }
 
-    await redisClient.setEx(recentAttemptKey, 10, "1");
+    await redisService.setEx(recentAttemptKey, 10, "1");
 
     const userId: string = generateUserId(sanitizedEmail);
 
@@ -83,7 +76,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
 
     //create new user in cloud db and cache for 1 hour
     await createNeonUser(userId, name, sanitizedEmail);
-    await redisClient.setEx(
+    await redisService.setEx(
       `user:${sanitizedEmail}`,
       3600,
       JSON.stringify({
