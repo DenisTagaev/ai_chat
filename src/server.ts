@@ -154,8 +154,9 @@ app.post('/ai-chat',
       const channel = await createAiChatChannel(userId);
       await sendMessageToAi(channel, aiMessage);
 
-      //save messages to the neondb
-      await saveStreamChatMessageToDB( userId, message, aiMessage);
+      //save messages to the neondb and clear cache
+      await saveStreamChatMessageToDB(userId, message, aiMessage);
+      await redisClient.del(`chat_history:${userId}`);
 
       res.status(200).json({ reply: aiMessage });
     } catch (error: any) {
