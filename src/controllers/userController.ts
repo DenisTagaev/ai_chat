@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import validator from "validator";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
-import { redisService } from "../services/redisService.js";
+import { getRedisClient } from "../services/redisService.js";
 import generateUserId from "../utils/idGenerator.js";
 import {
   checkRegisteredStreamUser,
@@ -15,6 +15,8 @@ const streamChatClient: StreamChat = StreamChat.getInstance(
   process.env.STREAM_API_KEY!,
   process.env.STREAM_API_SECRET!
 );
+
+const redisService = getRedisClient();
 
 export async function registerUser(req: Request, res: Response): Promise<any> {
   const { name, email } = req.body;

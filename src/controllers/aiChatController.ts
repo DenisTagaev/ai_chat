@@ -11,10 +11,11 @@ import {
   saveStreamChatMessageToDB,
 } from "../db/operations.js";
 import { getAiChatResponse } from "../services/openAiService.js";
-import { redisService } from "../services/redisService.js";
+import { getRedisClient } from "../services/redisService.js";
 import { ChatSelect } from "../db/schemas.js";
 import { APIResponse, Channel, UserResponse } from "stream-chat";
 
+const redisService = getRedisClient();
 
 // ------------------------------------------
 // POST /ai-chat
