@@ -92,7 +92,7 @@ export async function getUserChatHistory(
 
     // Cache only non-empty history
     if (chatHistory.length > 0) {
-      await redisService.setEx(recentAttemptKey, 600, JSON.stringify(chatHistory));
+      await redisService.set(recentAttemptKey, JSON.stringify(chatHistory), { ex: 600 });
     }
 
     return res.status(200).json({ messages: chatHistory });

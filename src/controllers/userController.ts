@@ -50,7 +50,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
       });
     }
 
-    await redisService.setEx(recentAttemptKey, 10, "1");
+    await redisService.set(recentAttemptKey, "1", { ex: 10 });
 
     const userId: string = generateUserId(sanitizedEmail);
 
@@ -76,15 +76,15 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
 
     //create new user in cloud db and cache for 1 hour
     await createNeonUser(userId, name, sanitizedEmail);
-    await redisService.setEx(
+    await redisService.set(
       `user:${sanitizedEmail}`,
-      3600,
       JSON.stringify({
         id: userId,
         email: sanitizedEmail,
         name,
         role: "user",
-      })
+      }),
+      { ex: 3600 }
     );
 
     // Generate StreamChat auth token
