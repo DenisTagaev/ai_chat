@@ -39,21 +39,41 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
       return res.status(404).json({ error: "User not found" });
     }
 
-    //on success send message to OpenAI
-    const aiMessage: string = await getAiChatResponse(message);
+    //on success send message to OpenAI in stream
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const aiMessageStream = await getAiChatResponse(message);
+
+    let fullReply: string = "";
+
+    for await (const chunk of aiMessageStream) {
+      const token: string = chunk.choices?.[0]?.delta?.content || "";
+      fullReply += token;
+
+      res.write(`data: ${token}\n\n`);
+    }
+
+    res.write("data: [STREAM_DONE]\n\n");
 
     // Open AI chat channel
     const channel: Channel = await createAiChatChannel(userId);
-    await sendMessageToAi(channel, aiMessage);
+    await sendMessageToAi(channel, fullReply);
 
     // Save messages in Neon DB and clear cache
-    await saveStreamChatMessageToDB(userId, message, aiMessage);
+    await saveStreamChatMessageToDB(userId, message, fullReply);
     await redisService.del(`chat_history:${userId}`);
     
-    return res.status(200).json({ reply: aiMessage });
+    return res.end();
   } catch (err: any) {
     console.error("AI Chat Error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+    res.write(`data: [ERROR]\n\n`);
+    return res.end();
   }
 }
 
