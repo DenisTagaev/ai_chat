@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 // --- USERS ---
 export async function createNeonUser(id: string, name: string, email: string) {
-  return db.insert(users).values({ id, name, email });
+  return db.insert(users).values({ userId: id, name, email });
 }
 
 export async function getNeonUserById(userId: string) {
