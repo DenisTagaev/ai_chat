@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import validator from "validator";
 import { APIResponse, StreamChat, UserResponse } from "stream-chat";
-import { getRedisClient } from "../services/redisService.js";
-import generateUserId from "../utils/idGenerator.js";
+import { getRedisClient } from "../services/redisService";
+import generateUserId from "../utils/idGenerator";
 import {
   checkRegisteredStreamUser,
   createStreamUser,
-} from "../services/streamChatService.js";
-import { createNeonUser, getNeonUserById } from "../db/operations.js";
+} from "../services/streamChatService";
+import { createNeonUser, getNeonUserById } from "../db/operations";
 
 
 // Init StreamChat client

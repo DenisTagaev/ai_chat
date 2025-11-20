@@ -4,15 +4,15 @@ import {
   checkRegisteredStreamUser,
   createAiChatChannel,
   sendMessageToAi,
-} from "../services/streamChatService.js";
+} from "../services/streamChatService";
 import {
   getNeonUserById,
   getStreamChatHistoryFromDB,
   saveStreamChatMessageToDB,
-} from "../db/operations.js";
-import { getAiChatResponse } from "../services/openAiService.js";
-import { getRedisClient } from "../services/redisService.js";
-import { ChatSelect } from "../db/schemas.js";
+} from "../db/operations";
+import { getAiChatResponse } from "../services/openAiService";
+import { getRedisClient } from "../services/redisService";
+import { ChatSelect } from "../db/schemas";
 import { APIResponse, Channel, UserResponse } from "stream-chat";
 
 const redisService = getRedisClient();
