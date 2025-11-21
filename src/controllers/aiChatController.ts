@@ -28,14 +28,19 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const existingStreamUser: APIResponse & {
-      users: Array<UserResponse>;
-    } = await checkRegisteredStreamUser(userId);
     const existingNeonUser: {
       [x: string]: any;
     }[] = await getNeonUserById(userId);
 
-    if (!existingStreamUser.users.length || !existingNeonUser.length) {
+    if (!existingNeonUser.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingStreamUser: APIResponse & {
+      users: Array<UserResponse>;
+    } = await checkRegisteredStreamUser(userId);
+
+    if (!existingStreamUser.users.length) {
       return res.status(404).json({ error: "User not found" });
     }
 

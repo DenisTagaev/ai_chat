@@ -57,14 +57,19 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
     const userId: string = generateUserId(sanitizedEmail);
 
     // Check StreamChat + NeonDB
-    const existingStreamUser: APIResponse & {
-      users: Array<UserResponse>;
-    } = await checkRegisteredStreamUser(userId);
     const existingNeonUser: {
       [x: string]: any;
     }[] = await getNeonUserById(userId);
 
-    if (existingStreamUser.users.length || existingNeonUser.length) {
+    if (existingNeonUser.length) {
+      return res.status(409).json({ error: "User already registered." });
+    }
+
+    const existingStreamUser: APIResponse & {
+      users: Array<UserResponse>;
+    } = await checkRegisteredStreamUser(userId);
+
+    if (existingStreamUser.users.length) {
       return res.status(409).json({ error: "User already registered." });
     }
 
