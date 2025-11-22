@@ -6,6 +6,7 @@ const tsJestTransformCfg = createDefaultPreset().transform;
 export default {
   preset: "ts-jest",
   testEnvironment: "node",
+  setupFiles: ["<rootDir>/src/loadEnv.ts"],
   roots: ["<rootDir>/src/tests"],
   testMatch: ["**/*.test.ts"],
   collectCoverage: true,
