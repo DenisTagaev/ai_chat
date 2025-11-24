@@ -1,4 +1,9 @@
-const redisMock = { del: jest.fn().mockResolvedValue(1) };
+const redisMock = { 
+  del: jest.fn().mockResolvedValue(1),
+  set: jest.fn(),
+  get: jest.fn() 
+};
+
 jest.mock("../../services/redisService", () => ({
   getRedisClient: jest.fn(() => redisMock),
 }));
@@ -25,7 +30,7 @@ jest.mock("../../services/openAiService");
 jest.mock("../../services/streamChatService");
 jest.mock("../../services/redisService");
 
-describe("aiChatController", () => {
+describe("handleAiChat", () => {
   const validBody = { message: "Hello", userId: "abc123" };
 
   beforeEach(() => {
@@ -132,5 +137,79 @@ describe("aiChatController", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
+  });
+});
+
+describe("getUserChatHistory", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    app.listen().close();
+  });
+
+  it("should return 400 if userId is missing", async () => {
+    const res = await request(app).post("/api/ai/chat-history").send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("Missing required fields");
+  });
+
+  it("/POST chat-history - should return cached messages if available", async () => {
+    const cachedMessages = [{ id: 1, userId: "abc123", message: "Hello" }];
+
+    redisMock.get.mockResolvedValue(JSON.stringify(cachedMessages));
+
+    const res = await request(app).post("/api/ai/chat-history").send({ userId: "abc123" });
+
+    expect(redisMock.get).toHaveBeenCalledWith("chat_history:abc123");
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toEqual(cachedMessages);
+  });
+
+  it("/POST chat-history - should return DB messages and store them into cache", async () => {
+    redisMock.get.mockResolvedValue(null);
+    const dbMessages = [{ id: 1, userId: "abc123", message: "Hi from DB" }];
+    (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue(dbMessages);
+
+    const res = await request(app)
+      .post("/api/ai/chat-history")
+      .send({ userId: "abc123" });
+
+    expect(redisMock.get).toHaveBeenCalledWith("chat_history:abc123");
+    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith("abc123");
+    expect(redisMock.set).toHaveBeenCalledWith(
+      "chat_history:abc123",
+      JSON.stringify(dbMessages),
+      { ex: 600 }
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toEqual(dbMessages);
+  });
+
+  it("should delete cache if corrupted and fetch from DB", async () => {
+    redisMock.get.mockResolvedValue("INVALID JSON");
+    const dbMessages = [{ id: 99, userId: "abc123", message: "Clean DB data" }];
+    (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue(dbMessages);
+
+    const res = await request(app).post("/api/ai/chat-history").send({ userId: "abc123" });
+
+    expect(redisMock.del).toHaveBeenCalledWith("chat_history:abc123");
+    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith("abc123");
+
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toEqual(dbMessages);
+  });
+
+  it("should return 500 if an internal error occurs", async () => {
+    redisMock.get.mockResolvedValue(null);
+    (getStreamChatHistoryFromDB as jest.Mock).mockRejectedValue(new Error("Failed to get AI response"));
+
+    const res = await request(app).post("/api/ai/chat-history").send({ userId: "abc123" });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe("Internal Server Error");
   });
 });
