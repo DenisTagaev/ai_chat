@@ -2,7 +2,7 @@ import { Chat, GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { GeminiMessage } from "../utils/interfaces";
 
 export type GeminiStream<T> = AsyncGenerator<T, any, any>;
-export class geminiAiClient{
+export class geminiAiClient {
   private geminiAiClient: GoogleGenAI;
 
   constructor() {
@@ -11,12 +11,11 @@ export class geminiAiClient{
     });
   }
 
-  private createChat(history: GeminiMessage[]): Chat{
-    const formattedHistory: 
-    {
+  private createChat(history: GeminiMessage[]): Chat {
+    const formattedHistory: {
       role: "user" | "model";
       parts: {
-          text: string;
+        text: string;
       }[];
     }[] = history.map((h: GeminiMessage) => ({
       role: h.role,
@@ -51,6 +50,10 @@ export class geminiAiClient{
         yield chunk.text;
       }
     }
+  }
+
+  public _getClient(): GoogleGenAI {
+    return this.geminiAiClient;
   }
 }
 
