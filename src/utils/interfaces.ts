@@ -4,3 +4,8 @@ export interface StreamUser {
     name: string;
     role?: string;
 }
+
+export interface GeminiMessage {
+  role: "user" | "model";
+  content: string;
+}

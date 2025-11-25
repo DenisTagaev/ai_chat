@@ -10,10 +10,11 @@ import {
   getStreamChatHistoryFromDB,
   saveStreamChatMessageToDB,
 } from "../db/operations";
-import { getAiChatResponse } from "../services/openAiService";
+import { geminiAiService, GeminiStream } from "../services/geminiAiService";
 import { getRedisClient } from "../services/redisService";
 import { ChatSelect } from "../db/schemas";
 import { APIResponse, Channel, UserResponse } from "stream-chat";
+import { GeminiMessage } from "../utils/interfaces";
 
 const redisService = getRedisClient();
 
@@ -44,26 +45,30 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
       return res.status(404).json({ error: "User not found" });
     }
 
-    //on success send message to OpenAI in stream
+    //on success send message to GeminiAI in stream
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
 
-    const aiMessageStream = await getAiChatResponse(message);
+    const formattedHistory: GeminiMessage[] = 
+      await getStreamChatHistoryFromDB(userId)
+        .then((r) => r.flatMap((chunk) => [
+          { role: "user" as const, content: String(chunk.message)},
+          { role: "model" as const, content: String(chunk.reply)}
+        ]));
+    const aiMessageStream: GeminiStream<string> = await geminiAiService.streamResponse(message, formattedHistory);
 
     let fullReply: string = "";
 
     for await (const chunk of aiMessageStream) {
-      const token: string = chunk.choices?.[0]?.delta?.content || "";
-      fullReply += token;
-
-      res.write(`data: ${token}\n\n`);
+      fullReply += chunk;
+      res.write(`data: ${chunk}\n\n`);
     }
 
     res.write("data: [STREAM_DONE]\n\n");
 
-    // Open AI chat channel
+    // Gemini AI chat channel
     const channel: Channel = await createAiChatChannel(userId);
     await sendMessageToAi(channel, fullReply);
 
