@@ -79,6 +79,9 @@ describe("handleAiChat", () => {
     (checkRegisteredStreamUser as jest.Mock).mockResolvedValue({
       users: [{ id: "abc123" }],
     });
+    (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue([
+      { message: "Hello", reply: "World" },
+    ]);
 
     async function* mockStream() {
       yield "Hello";
