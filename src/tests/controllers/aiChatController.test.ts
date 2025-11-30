@@ -22,11 +22,11 @@ import {
   createAiChatChannel,
   sendMessageToAi,
 } from "../../services/streamChatService";
-import { getAiChatResponse } from "../../services/openAiService";
+import { geminiAiService } from "../../services/geminiAiService";
 import { handleAiChat } from "../../controllers/aiChatController";
 
 jest.mock("../../db/operations");
-jest.mock("../../services/openAiService");
+jest.mock("../../services/geminiAiService");
 jest.mock("../../services/streamChatService");
 jest.mock("../../services/redisService");
 
@@ -81,11 +81,13 @@ describe("handleAiChat", () => {
     });
 
     async function* mockStream() {
-      yield { choices: [{ delta: { content: "Hello" } }] };
-      yield { choices: [{ delta: { content: " World" } }] };
+      yield "Hello";
+      yield " World";
     }
+    (geminiAiService.streamResponse as jest.Mock).mockResolvedValue(
+      mockStream()
+    );
 
-    (getAiChatResponse as jest.Mock).mockReturnValue(mockStream());
     (createAiChatChannel as jest.Mock).mockResolvedValue({ id: "chan1" });
     (sendMessageToAi as jest.Mock).mockResolvedValue({});
     (saveStreamChatMessageToDB as jest.Mock).mockResolvedValue({});
@@ -95,7 +97,7 @@ describe("handleAiChat", () => {
     expect(res.headers["content-type"]).toMatch(/text\/event-stream/);
     expect(saveStreamChatMessageToDB).toHaveBeenCalledWith(
       validBody.userId,
-      "Hello",
+      validBody.message,
       "Hello World"
     );
     expect(sendMessageToAi).toHaveBeenCalledWith(
@@ -112,9 +114,11 @@ describe("handleAiChat", () => {
       users: [{ id: validBody.userId }] as UserResponse[],
     } as APIResponse & { users: UserResponse[] });
 
-    (getAiChatResponse as jest.Mock).mockImplementation(async function* () {
-      throw new Error("Failed to get AI response");
-    });
+    (geminiAiService.streamResponse as jest.Mock).mockImplementation(
+      async function* () {
+        throw new Error("Gemini failure");
+      }
+    );
 
     const req = { body: validBody } as Request;
 
