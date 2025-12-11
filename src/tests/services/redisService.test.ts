@@ -25,6 +25,14 @@ describe("redisService", () => {
     process.env = OLD_ENV;
   });
 
+  function loadIsolatedService() {
+    let getRedisClient: any;
+    jest.isolateModules(() => {
+      getRedisClient = require("../../services/redisService").getRedisClient;
+    });
+    return getRedisClient;
+  }
+
   it("throws error when env variables are missing", () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -59,10 +67,12 @@ describe("redisService", () => {
     process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token123";
 
-    const client1 = getRedisClient();
-    const client2 = getRedisClient();
+    const RedisClient = loadIsolatedService();
+
+    const client1 = RedisClient();
+    const client2 = RedisClient();
 
     expect(client1).toBe(client2);
-    expect(Redis).toHaveBeenCalledTimes(1);
+    expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
   });
 });
