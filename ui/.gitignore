@@ -7,10 +7,41 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript
+*.tsbuildinfo
+dist/
 dist-ssr
 *.local
+build/
+temp/
+tsconfig.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Vite and Vue build output
+dist/
+vite-dist/
+.vite/
+.vitepress/dist
+.svelte-kit/
+.nuxt/
+.output/
+
+# Local env files
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
