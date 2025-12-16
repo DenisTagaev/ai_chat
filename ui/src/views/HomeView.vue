@@ -1,9 +1,13 @@
 <script setup lang="ts">
     import { ref, type Ref } from 'vue';
+    import { useRouter } from 'vue-router';
+    import axios from 'axios';
+
     import { useUserStore } from '../stores/user';
     import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png';
 
     const userStore = useUserStore();
+    const router = useRouter();
     const name: Ref<string, string> = ref('');
     const email: Ref<string, string> = ref('');
     const loading: Ref<boolean, boolean> = ref(false);
@@ -33,6 +37,7 @@
     }
     const createUser = async () => {
         error.value = "";
+        loading.value = true;
 
         const validationError: string | null = validateUserInput(name.value, email.value);
 
@@ -42,10 +47,19 @@
         }
 
         try {
-            loading.value = true;
-            // TODO: backend call
-        } catch {
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+                name: name.value,
+                email: email.value,
+            });
+            userStore.setUser({
+                userId: data.userId,
+                name: data.name
+            });
+
+            router.push('/chat');
+        } catch(err) {
             error.value = "Something went wrong. Please try again.";
+            console.log(err);
         } finally {
             loading.value = false;
         }
