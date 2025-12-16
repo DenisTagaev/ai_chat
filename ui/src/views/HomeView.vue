@@ -1,33 +1,35 @@
 <script setup lang="ts">
     import { ref, type Ref } from 'vue';
+    import { useUserStore } from '../stores/user';
     import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png';
 
-   const name: Ref<string, string> = ref('');
-   const email: Ref<string, string> = ref('');
-   const loading: Ref<boolean, boolean> = ref(false);
-   const error: Ref<string, string> = ref('');
+    const userStore = useUserStore();
+    const name: Ref<string, string> = ref('');
+    const email: Ref<string, string> = ref('');
+    const loading: Ref<boolean, boolean> = ref(false);
+    const error: Ref<string, string> = ref('');
 
-   function validateUserInput(name: string, email: string): string | null {
-    const trimmedName: string = name.trim();
-    const trimmedEmail: string = email.trim();
+    function validateUserInput(name: string, email: string): string | null {
+        const trimmedName: string = name.trim();
+        const trimmedEmail: string = email.trim();
 
-    if (!trimmedName && !trimmedEmail) {
-        return "Name and email are required.";
-    }
+        if (!trimmedName && !trimmedEmail) {
+            return "Name and email are required.";
+        }
 
-    if (!trimmedName) {
-        return "Name is required.";
-    }
+        if (!trimmedName) {
+            return "Name is required.";
+        }
 
-    if (!trimmedEmail) {
-        return "Email is required.";
-    }
+        if (!trimmedEmail) {
+            return "Email is required.";
+        }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-        return "Please enter a valid email address.";
-    }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            return "Please enter a valid email address.";
+        }
 
-    return null;
+        return null;
     }
     const createUser = async () => {
         error.value = "";
@@ -47,7 +49,7 @@
         } finally {
             loading.value = false;
         }
-   }
+    }
 </script>
 
 <template>
