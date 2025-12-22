@@ -10,7 +10,7 @@
     const router = useRouter();
     const chatSectionRef = ref<HTMLElement | null>(null);
 
-    const scrollToBottom = async () => {
+    const scrollToBottom = async (): Promise<void> => {
         await nextTick();
         chatSectionRef.value?.scrollTo({
             top: chatSectionRef.value.scrollHeight,
@@ -19,15 +19,15 @@
     }
 
     watch(
-        () => chatStore.messages.length,
-        () => scrollToBottom()
+        (): number => chatStore.messages.length,
+        (): Promise<void> => scrollToBottom()
     );
 
-    onMounted(async () => {
-        if(!userStore.userId) {
-            router.replace('/');
-            return;
-        }
+    onMounted(async (): Promise<void> => {
+        // if(!userStore.userId) {
+        //     router.replace('/');
+        //     return;
+        // }
 
         await chatStore.loadChatHistory();
     });
@@ -44,7 +44,7 @@
                 </div>
             </div>
             <p v-if="chatStore.error" class="text-center text-rose-600">
-                Failed to load chat history...
+                {{ chatStore.error }}
             </p>
         </div>
     </section>
