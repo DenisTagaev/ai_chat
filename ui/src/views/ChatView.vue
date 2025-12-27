@@ -4,6 +4,7 @@
     import { useChatStore } from '../stores/chat';
     import { useRouter } from 'vue-router';
     import Header from '../components/Header.vue';
+    import NewMessage from '../components/NewMessage.vue';
 
     const userStore = useUserStore();
     const chatStore = useChatStore();
@@ -46,6 +47,13 @@
             <p v-if="chatStore.error" class="text-center text-rose-600">
                 {{ chatStore.error }}
             </p>
+            <div v-if="chatStore.isLoading" class="flex justify-start">
+                <div class="bg-slate-700 text-white px-4 py-2 rounded-md">
+                    <span class="animate-pulse">AI assistant is thinking...</span>
+                </div>
+            </div>
         </div>
+
+        <NewMessage @send="chatStore.sendAIRequest"/>
     </section>
 </template>
