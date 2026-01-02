@@ -40,10 +40,10 @@
     );
 
     onMounted(async (): Promise<void> => {
-        // if(!userStore.userId) {
-        //     router.replace('/');
-        //     return;
-        // }
+        if(!userStore.userId) {
+            router.replace('/');
+            return;
+        }
 
         await chatStore.loadChatHistory();
     });
