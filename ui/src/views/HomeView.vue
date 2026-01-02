@@ -71,7 +71,7 @@
         <section class="p-8 bg-gray-700 rounded-lg shadow-lg w-full max-w-md" aria-labelledby="page-login">
             <img
                 :src="chatImage"
-                alt="AI bot image"
+                alt="AI bot"
                 class="mx-auto w-24 h-24 mb-4"
                 loading="lazy"
                 decoding="async"
