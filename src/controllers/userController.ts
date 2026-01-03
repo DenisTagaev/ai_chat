@@ -8,6 +8,7 @@ import {
   createStreamUser,
 } from "../services/streamChatService";
 import { createNeonUser, getNeonUserById } from "../db/operations";
+import { getUserChatHistory } from "./aiChatController";
 
 
 // Init StreamChat client
@@ -20,7 +21,7 @@ const redisService = getRedisClient();
 
 export async function registerUser(req: Request, res: Response): Promise<any> {
   const { name, email } = req.body;
-  
+
   try {
     if (
       !name ||
@@ -69,6 +70,11 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
       users: Array<UserResponse>;
     } = await checkRegisteredStreamUser(userId);
 
+    if (existingNeonUser.length && existingStreamUser.users.length) {
+      // already fully registered → behave like login
+      return getUserChatHistory(req, res);
+    }
+
     if (existingStreamUser.users.length) {
       return res.status(409).json({ error: "User already registered." });
     }
@@ -104,6 +110,43 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
     });
   } catch (error: any) {
     console.error("Registration Error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+export async function loginUser(req: Request, res: Response): Promise<any> {
+  const { email, name } = req.body;
+
+  if (!email || !validator.isEmail(email)) {
+    return res.status(400).json({ error: "Invalid email address." });
+  }
+
+  const sanitizedEmail = validator.normalizeEmail(email);
+  if (!sanitizedEmail) {
+    return res.status(400).json({ error: "Invalid email format." });
+  }
+
+  const userId = generateUserId(sanitizedEmail);
+
+  try {
+    const existingNeonUser: {
+      [x: string]: any;
+    }[] = await getNeonUserById(userId);
+
+    if(!existingNeonUser.length) return registerUser(req, res);
+
+    const existingStreamUser: APIResponse & {
+      users: Array<UserResponse>;
+    } = await checkRegisteredStreamUser(userId);
+
+    if(!existingStreamUser.users.length) return registerUser(req, res);
+
+    return res.status(200).json({
+      message: "User login success.",
+      user: { id: userId, name },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

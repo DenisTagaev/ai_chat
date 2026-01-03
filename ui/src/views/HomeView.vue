@@ -47,13 +47,13 @@
         }
 
         try {
-            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/register`, {
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
                 name: name.value,
                 email: email.value,
             });
             userStore.setUser({
-                userId: data.userId,
-                name: data.name
+                userId: data.user.id,
+                name: data.user.name
             });
 
             router.push('/chat');

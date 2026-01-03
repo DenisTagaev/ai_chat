@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit, { RateLimitRequestHandler } from "express-rate-limit";
-import { registerUser } from "../controllers/userController";
+import { loginUser, registerUser } from "../controllers/userController";
 import { validate } from "../middleware/zodValidator";
 import { RegisterUserSchema } from "../db/validators/zodUserChemas";
 
@@ -13,5 +13,6 @@ const registerLimiter: RateLimitRequestHandler = rateLimit({
 const router: Router = Router();
 
 router.post("/register", validate(RegisterUserSchema), registerLimiter, registerUser);
+router.post("/login", loginUser);
 
 export default router;
