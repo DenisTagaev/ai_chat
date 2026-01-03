@@ -1,43 +1,14 @@
 <script setup lang="ts">
-    import { onMounted, nextTick, ref, watch } from 'vue';
+    import { onMounted } from 'vue';
+    import { useRouter } from 'vue-router';
     import { useUserStore } from '../stores/user';
     import { useChatStore } from '../stores/chat';
-    import { useRouter } from 'vue-router';
     import Header from '../components/Header.vue';
-    import NewMessage from '../components/NewMessage.vue';
+    import ChatContainer from '../components/chat/ChatContainer.vue';
 
     const userStore = useUserStore();
     const chatStore = useChatStore();
     const router = useRouter();
-    const chatSectionRef = ref<HTMLElement | null>(null);
-
-    const scrollToBottom = async (): Promise<void> => {
-        await nextTick();
-        chatSectionRef.value?.scrollTo({
-            top: chatSectionRef.value.scrollHeight,
-            behavior: 'smooth',
-        });
-    }
-
-    const formatAIText = (message: string): string => {
-        if(!message.trim()) return '';
-
-        return message
-            .replace(/\n/g, '<br>') // Preserve line breaks
-            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold text
-            .replace(/\*(.*?)\*/g, '<i>$1</i>') // Italic text
-            .replace(/`(.*?)`/g, '<code>$1</code>') // Inline code
-            .replace(/(?:^|\n)- (.*?)(?:\n|$)/g, '<li>$1</li>') // Bullet points
-            .replace(/(?:^|\n)(\d+)\. (.*?)(?:\n|$)/g, '<li>$1. $2</li>') // Numbered lists
-            .replace(/<\/li>\n<li>/g, '</li><li>') // Ensure list continuity
-            .replace(/<li>/, '<ul><li>') // Wrap in `<ul>`
-            .replace(/<\/li>$/, '</li></ul>'); // Close the `<ul>`
-    }
-
-    watch(
-        (): number => chatStore.messages.length,
-        (): Promise<void> => scrollToBottom()
-    );
 
     onMounted(async (): Promise<void> => {
         if(!userStore.userId) {
@@ -53,7 +24,7 @@
     <section class="flex flex-col h-screen bg-slate-900 text-slate-50">
         <Header/>
 
-        <div ref="chatSectionRef" id="chat-section" class="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite">
+        <!-- <div ref="chatSectionRef" id="chat-section" class="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite">
             <div v-for="(msg, index) in chatStore.messages" :key="index" class="flex items-start" :class="msg.role === 'user' ? 'justify-end': 'justify-start'">
                 <div :v-html="msg.role === 'model' ? formatAIText(msg.content) : msg.content" v-memo="[msg.content]" class="max-w-xs px-4 py-2 rounded md:max-w-md text-slate-100" :class="msg.role === 'user' ? 'bg-blue-600' : 'bg-slate-700'">
                     {{ msg.content }}
@@ -67,8 +38,8 @@
                     <span class="animate-pulse">AI assistant is thinking...</span>
                 </div>
             </div>
-        </div>
+        </div> -->
 
-        <NewMessage @send="chatStore.sendAIRequest"/>
+        <ChatContainer/>
     </section>
 </template>
