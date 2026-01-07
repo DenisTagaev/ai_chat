@@ -102,14 +102,13 @@ export async function getUserChatHistory(
     }
 
     const recentAttemptKey: string = `chat_history:${userId}`;
-    const cachedData: string | null = await redisService.get(recentAttemptKey);
+    const cachedData = await redisService.get<ChatSelect[]>(recentAttemptKey);
 
 
     // Serve from cache when possible
-    if (cachedData) {
+    if (cachedData && Array.isArray(cachedData)) {
       try {
-        const parsed = JSON.parse(cachedData) as ChatSelect[];
-        return res.status(200).json({ messages: parsed });
+        return res.status(200).json({ messages: cachedData });
       } catch (err) {
         // If cache is corrupt, delete and refetch from DB
         console.error(err);
@@ -123,7 +122,7 @@ export async function getUserChatHistory(
 
     // Cache only non-empty history
     if (chatHistory.length > 0) {
-      await redisService.set(recentAttemptKey, JSON.stringify(chatHistory), { ex: 600 });
+      await redisService.set(recentAttemptKey, chatHistory, { ex: 600 });
     }
 
     return res.status(200).json({ messages: chatHistory });

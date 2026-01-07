@@ -90,13 +90,12 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
     //create new user in cloud db and cache for 1 hour
     await createNeonUser(userId, name, sanitizedEmail);
     await redisService.set(
-      `user:${sanitizedEmail}`,
-      JSON.stringify({
+      `user:${sanitizedEmail}`,{
         id: userId,
         email: sanitizedEmail,
         name,
         role: "user",
-      }),
+      },
       { ex: 3600 }
     );
 
