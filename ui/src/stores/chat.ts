@@ -18,7 +18,10 @@ export const useChatStore = defineStore("chat",  () => {
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const userStore = useUserStore();
-    const baseURL: string = import.meta.env.VITE_API_URL + 'api/ai';
+    const api = axios.create({
+      baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai",
+    });
+
 
     const loadChatHistory = async (): Promise<void> => {
         if(!userStore.userId) return;
@@ -27,8 +30,8 @@ export const useChatStore = defineStore("chat",  () => {
         error.value = null;
 
         try {
-            const { data } = await axios.post(
-              `${baseURL}/chat-history`,
+            const { data } = await api.post(
+              '/chat-history',
               {
                 userId: userStore.userId,
               }
@@ -37,8 +40,7 @@ export const useChatStore = defineStore("chat",  () => {
             messages.value = data.messages.flatMap((msg: MessageState): FormattedMessageState[] => [
                 { role: 'user', content: msg.message },
                 { role: 'model', content: msg.reply },
-            ]).map((msg: FormattedMessageState) => msg.content)
-            .filter(Boolean);
+            ]).filter((msg: FormattedMessageState) => msg.content);
         } catch (err) {
             error.value = 'Failed to load chat history';
             console.error(`Error loading chat history: ${err}`);
@@ -58,7 +60,7 @@ export const useChatStore = defineStore("chat",  () => {
         isLoading.value = true;
 
         try {
-            const { data } = await axios.post(`${baseURL}/chat`, {
+            const { data } = await api.post('/chat', {
                 message,
                 userId: userStore.userId
             });
