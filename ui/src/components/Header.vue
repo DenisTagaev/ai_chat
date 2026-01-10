@@ -14,7 +14,7 @@
 </script>
 
 <template>
-    <nav class="py-4 px-6 bg-slate-100 dark:bg-slate-800 shadow-md flex items-center justify-between" role="banner">
+    <nav class="py-4 px-6 bg-slate-100 dark:bg-slate-800 shadow-md flex items-center justify-between" role="navigation">
         <div class="flex items-center gap-2">
             <img
                 :src="chatImage"

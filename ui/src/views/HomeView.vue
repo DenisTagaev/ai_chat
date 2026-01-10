@@ -1,129 +1,32 @@
 <script setup lang="ts">
-    import { ref, type Ref } from 'vue';
-    import { useRouter } from 'vue-router';
-    import axios from 'axios';
-
-    import { useUserStore } from '../stores/user';
-    import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png';
-
-    const userStore = useUserStore();
-    const router = useRouter();
-    const name: Ref<string, string> = ref('');
-    const email: Ref<string, string> = ref('');
-    const loading: Ref<boolean, boolean> = ref(false);
-    const error: Ref<string, string> = ref('');
-
-    function validateUserInput(name: string, email: string): string | null {
-        const trimmedName: string = name.trim();
-        const trimmedEmail: string = email.trim();
-
-        if (!trimmedName && !trimmedEmail) {
-            return "Name and email are required.";
-        }
-
-        if (!trimmedName) {
-            return "Name is required.";
-        }
-
-        if (!trimmedEmail) {
-            return "Email is required.";
-        }
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-            return "Please enter a valid email address.";
-        }
-
-        return null;
-    }
-    const createUser = async () => {
-        error.value = "";
-        loading.value = true;
-
-        const validationError: string | null = validateUserInput(name.value, email.value);
-
-        if (validationError) {
-            error.value = validationError;
-            return;
-        }
-
-        try {
-            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/api/users/login`, {
-                name: name.value,
-                email: email.value,
-            });
-            userStore.setUser({
-                userId: data.user.id,
-                name: data.user.name
-            });
-
-            router.push('/chat');
-        } catch(err) {
-            error.value = "Something went wrong. Please try again.";
-            console.log(err);
-        } finally {
-            loading.value = false;
-        }
-    }
+    import AuthForm from '../components/auth/AuthForm.vue'
+    import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png'
 </script>
 
 <template>
-    <main class="min-h-screen flex items-center justify-center bg-gray-800 text-slate-200">
-        <section class="p-8 bg-gray-700 rounded-lg shadow-lg w-full max-w-md" aria-labelledby="page-login">
-            <img
-                :src="chatImage"
-                alt="AI bot"
-                class="mx-auto w-24 h-24 mb-4"
-                loading="lazy"
-                decoding="async"
-            >
-            <h1
-                id="page-title"
-                class="text-2xl font-semibold mb-4 text-center text-slate-200"
-            >
-                Welcome to your personal AI assistant
-            </h1>
-            <form @submit.prevent="createUser" novalidate>
-                 <div class="mt-3">
-                    <label for="name" class="sr-only">Name</label>
-                    <input
-                        id="name"
-                        type="text"
-                        class="w-full p-2 mb-2 bg-gray-600 text-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        name="name"
-                        placeholder="Name"
-                        v-model.trim="name"
-                        :disabled="loading"
-                        autocomplete="name"
-                        required
-                    >
-                </div>
+  <main
+    class="min-h-screen flex items-center justify-center bg-gray-800 text-slate-200"
+  >
+    <section
+      class="p-8 bg-gray-700 rounded-lg shadow-lg w-full max-w-md"
+      aria-labelledby="page-login"
+    >
+      <img
+        :src="chatImage"
+        alt="AI assistant avatar"
+        class="mx-auto w-24 h-24 mb-4"
+        loading="lazy"
+        decoding="async"
+      />
 
-                <div class="mb-4">
-                    <label for="email" class="sr-only">Email</label>
-                    <input
-                        id="email"
-                        type="email"
-                        class="w-full p-2 mb-2 bg-gray-600 text-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        name="name"
-                        placeholder="Email"
-                        :disabled="loading"
-                        v-model.trim="email"
-                        autocomplete="email"
-                        required
-                    >
-                </div>
+      <h1
+        id="page-title"
+        class="text-2xl font-semibold mb-4 text-center"
+      >
+        Welcome to your personal AI assistant
+      </h1>
 
-                <button
-                    type="submit"
-                    class="w-full p-2 bg-sky-600 rounded-lg font-medium transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
-                    :disabled="loading"
-                    :aria-busy="loading"
-                >
-                    {{  loading ? "Connecting to bot..." : "Start chat" }}
-                </button>
-
-                <p v-if="error" class="text-center text-rose-600 mt-3" role="alert">{{ error }}</p>
-            </form>
-        </section>
-    </main>
+      <AuthForm />
+    </section>
+  </main>
 </template>
