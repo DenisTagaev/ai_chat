@@ -1,12 +1,10 @@
 import { createRouter,  createWebHistory, type RouteRecordRaw } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import ChatView from "../views/ChatView.vue";
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "home",
-    component: HomeView,
+    component: () => import("../views/HomeView.vue"),
     meta: {
       title: "AI Assistant chat Home",
       description: "Create your personal AI assistant channel and start chatting instantly",
@@ -16,7 +14,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/chat",
     name: "AI chat",
-    component: ChatView,
+    component: () => import("../views/ChatView.vue"),
     meta: {
       title: "AI assistant chat - Private Channel",
       description: "Your private AI chat channel conversation",

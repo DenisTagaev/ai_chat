@@ -2,28 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>AI Assistant Chat – Your Personal AI Helper</title>
+
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="AI Chat" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Assistant Chat – Your Personal AI Helper</title>
-    <meta name="description"
-      content="Chat with your personal AI assistant. Get instant answers, smart suggestions, and helpful conversations powered by AI." />
-    <meta name="theme-color" content="#0f172a"/>
+
     <meta name="robots" content="index, follow"/>
+    <meta name="apple-mobile-web-app-title" content="AI Chat" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description"
+    content="Chat with your personal AI assistant. Get instant answers, smart suggestions, and helpful conversations powered by AI." />
+    <meta name="theme-color" content="#0f172a"/>
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <meta name="referrer" content="strict-origin-when-cross-origin"/>
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content="AI Assistant Chat" />
     <meta property="og:description" content="Your personal AI assistant for smart, fast conversations." />
     <meta property="og:image" content="./src/assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png" />
-    <meta property="og:url" content="https://your-domain.com" />
+    <!-- <meta property="og:url" content="https://your-domain.com" /> -->
     <meta property="og:site_name" content="AI Assistant Chat" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AI Assistant Chat" />
+    <meta name="twitter:description" content="Your personal AI assistant for smart, fast conversations." />
 
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <noscript>
+      <strong>This app requires JavaScript to run.</strong>
+    </noscript>
+
+    <div id="app" role="application" aria-label="AI Assistant Chat App"></div>
+    <script type="module" src="/src/main.ts" defer></script>
   </body>
 </html>
