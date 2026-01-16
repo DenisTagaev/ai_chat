@@ -8,6 +8,5 @@
     "types": [
       "vite-plugin-pwa/vue"
     ]
-  },
-  "include": ["src", "vite-env.d.ts"]
+  }
 }
