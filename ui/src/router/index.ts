@@ -7,9 +7,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/HomeView.vue"),
     meta: {
       title: "AI Assistant chat Home",
-      description: "Create your personal AI assistant channel and start chatting instantly",
-      robots: "index, follow"
-    }
+      description:
+        "Create your personal AI assistant channel and start chatting instantly",
+      robots: "index, follow",
+    },
   },
   {
     path: "/chat",
@@ -18,8 +19,17 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: "AI assistant chat - Private Channel",
       description: "Your private AI chat channel conversation",
+      robots: "noindex, nofollow",
+    },
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: () => import("../views/NotFound.vue"),
+    meta: {
+      title: "404 – Page Not Found",
       robots: "noindex, nofollow"
-    }
+    },
   },
 ];
 
