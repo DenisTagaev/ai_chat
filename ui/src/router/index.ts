@@ -1,4 +1,8 @@
 import { createRouter,  createWebHistory, type RouteRecordRaw } from "vue-router";
+import { useUserStore } from "../stores/user";
+import { ref, type Ref } from "vue";
+
+export const isRouteLoading: Ref<boolean, boolean> = ref(false);
 
 const routes: RouteRecordRaw[] = [
   {
@@ -41,6 +45,18 @@ export const router = createRouter({
     }
 });
 
+router.beforeEach((to, from, next) => {
+  isRouteLoading.value = true;
+  const user = useUserStore();
+
+  if(to.name === "AI chat" && !user.isAuthenticated) {
+    next({ name: "home" });
+    return;
+  }
+
+  next();
+});
+
 router.afterEach((to) => {
   document.title = (to.meta.title as string) ?? "AI Assistant Chat";
   const descriptionTag: HTMLMetaElement | null =
@@ -59,4 +75,8 @@ router.afterEach((to) => {
     document.head.appendChild(robotsTag);
   }
   robotsTag.content = (to.meta.robots as string) ?? "index, follow";
+
+  requestAnimationFrame((): void => {
+    isRouteLoading.value = false;
+  });
 });

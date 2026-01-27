@@ -1,13 +1,13 @@
 <script setup lang="ts">
     import Loader from '../components/Loader.vue'
+    import { isRouteLoading } from '../router'
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center bg-gray-800">
     <Loader
-      :show="true"
+      :show="isRouteLoading"
       overlay
       label="Loading…"
     />
-  </main>
+    <RouterView/>
 </template>
