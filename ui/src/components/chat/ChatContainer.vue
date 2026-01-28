@@ -14,7 +14,12 @@
 </script>
 
 <template>
+    <div v-if="chatStore.isInitializing" class="flex-1 overflow-y-auto p-4 space-y-4 animate-pulse">
+        <div class="h-3 w-1/2 rounded bg-white/30"></div>
+        <div class="h-3 w-3/4 rounded bg-white/20"></div>
+    </div>
     <div
+        v-else
         ref="containerRef"
         class="flex-1 overflow-y-auto p-4 space-y-4"
         aria-live="polite"
@@ -23,5 +28,5 @@
         <ChatError v-if="chatStore.error" :error="chatStore.error"/>
         <ChatTypingIndicator v-if="chatStore.isLoading" />
     </div>
-    <NewMessage @send="chatStore.sendAIRequest"/>
+    <NewMessage v-if="!chatStore.isInitializing" @send="chatStore.sendAIRequest"/>
 </template>

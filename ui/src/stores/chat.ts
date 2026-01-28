@@ -14,26 +14,42 @@ interface FormattedMessageState {
 }
 
 export const useChatStore = defineStore("chat",  () => {
+    let abortController: AbortController | null = null;
     const messages = ref<FormattedMessageState[]>([]);
+    const isInitializing = ref(false);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const userStore = useUserStore();
+
+    const abortActiveRequest = (): void => {
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+    };
+
     const api = axios.create({
       baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai",
     });
 
 
     const loadChatHistory = async (): Promise<void> => {
-        if(!userStore.userId) return;
+        if(!userStore.userId || messages.value.length) return;
 
-        isLoading.value = true;
+        isInitializing.value = true;
         error.value = null;
+
+        abortActiveRequest();
+        abortController = new AbortController();
 
         try {
             const { data } = await api.post(
               '/chat-history',
               {
                 userId: userStore.userId,
+              },
+              {
+                signal: abortController.signal
               }
             );
 
@@ -41,11 +57,14 @@ export const useChatStore = defineStore("chat",  () => {
                 { role: 'user', content: msg.message },
                 { role: 'model', content: msg.reply },
             ]).filter((msg: FormattedMessageState) => msg.content);
-        } catch (err) {
-            error.value = 'Failed to load chat history';
-            console.error(`Error loading chat history: ${err}`);
+        } catch (err: any) {
+            if(err.name !== "AbortError"){
+                error.value = 'Failed to load chat history';
+                console.error(`Error loading chat history: ${err}`);
+            }
         } finally {
-            isLoading.value = false;
+            isInitializing.value = false;
+            abortController = null;
         }
     }
     const reset = (): void => {
@@ -59,14 +78,25 @@ export const useChatStore = defineStore("chat",  () => {
         messages.value.push({ role: 'user', content: message });
         isLoading.value = true;
 
+        abortActiveRequest();
+        abortController = new AbortController();
+
         try {
-            const { data } = await api.post('/chat', {
+            const { data } = await api.post(
+              "/chat",
+              {
                 message,
-                userId: userStore.userId
-            });
+                userId: userStore.userId,
+              },
+              {
+                signal: abortController.signal,
+              },
+            );
 
             messages.value.push({ role: "model", content: data.reply });
-        } catch (err) {
+        } catch (err: any) {
+            if (err.name === "CanceledError" || err.name === "AbortError") return;
+
             console.error('Error sending message: ', err);
             error.value = 'Failed to reach the server';
             messages.value.push({
@@ -75,15 +105,18 @@ export const useChatStore = defineStore("chat",  () => {
             });
         } finally {
             isLoading.value = false;
+            abortController = null;
         }
     }
 
     return {
        messages: readonly(messages),
        isLoading: readonly(isLoading),
+       isInitializing: readonly(isInitializing),
        error: readonly(error),
        loadChatHistory,
        sendAIRequest,
+       abortActiveRequest,
        reset,
      };
 });

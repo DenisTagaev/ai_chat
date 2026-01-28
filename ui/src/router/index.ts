@@ -49,8 +49,8 @@ router.beforeEach((to, from, next) => {
   isRouteLoading.value = true;
   const user = useUserStore();
 
-  if(to.name === "AI chat" && !user.isAuthenticated) {
-    next({ name: "home" });
+  if(to.path === "/chat" && !user.isAuthenticated) {
+    next({ name: "home", replace: true });
     return;
   }
 
