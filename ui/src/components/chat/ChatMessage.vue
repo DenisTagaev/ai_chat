@@ -10,11 +10,12 @@
     const { format } = useMessageFormatter()
 
     const formattedContent = computed(
-        () => typeof props.content === 'string'
-          ? props.role === 'model'
+        () => {
+          if(!props.content) return "";
+          return props.role === "model"
             ? format(props.content)
             : props.content
-          : ''
+        }
     )
 </script>
 
