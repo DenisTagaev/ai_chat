@@ -16,7 +16,11 @@
             return;
         }
 
-        await chatStore.loadChatHistory();
+        chatStore.hydrateMessages();
+
+        if(!chatStore.messages.length){
+            await chatStore.loadChatHistory();
+        }
     });
 
     const ChatContainer = defineAsyncComponent({

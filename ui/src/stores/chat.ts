@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { hydrate, readonly, ref, watch } from "vue";
+import { readonly, ref, watch } from "vue";
 import axios from "axios";
 import { useUserStore } from "./user";
 
@@ -148,7 +148,7 @@ export const useChatStore = defineStore("chat",  () => {
        isInitializing: readonly(isInitializing),
        isHydrated: readonly(isHydrated),
        error: readonly(error),
-       hydrate,
+       hydrateMessages,
        loadChatHistory,
        sendAIRequest,
        abortActiveRequest,
