@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { readonly, ref } from "vue";
+import { hydrate, readonly, ref, watch } from "vue";
 import axios from "axios";
 import { useUserStore } from "./user";
 
@@ -13,12 +13,17 @@ interface FormattedMessageState {
     content: string;
 }
 
+const STORAGE_KEY: string = "chat-messages";
+
 export const useChatStore = defineStore("chat",  () => {
     let abortController: AbortController | null = null;
+
     const messages = ref<FormattedMessageState[]>([]);
     const isInitializing = ref(false);
     const isLoading = ref(false);
+    const isHydrated = ref(false);
     const error = ref<string | null>(null);
+
     const userStore = useUserStore();
 
     const abortActiveRequest = (): void => {
@@ -32,6 +37,21 @@ export const useChatStore = defineStore("chat",  () => {
       baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai",
     });
 
+    const hydrateMessages = (): void => {
+      if(isHydrated.value) return;
+
+      const cached: string | null = localStorage.getItem(STORAGE_KEY);
+
+      if(cached) {
+        try{
+          messages.value = JSON.parse(cached);
+        } catch {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+
+      isHydrated.value = true;
+    }
 
     const loadChatHistory = async (): Promise<void> => {
         if(!userStore.userId || messages.value.length) return;
@@ -67,9 +87,12 @@ export const useChatStore = defineStore("chat",  () => {
             abortController = null;
         }
     }
+
     const reset = (): void => {
+        abortActiveRequest();
         messages.value = [];
         error.value = null;
+        localStorage.removeItem(STORAGE_KEY);
     }
 
     const sendAIRequest = async (message: string): Promise<void> => {
@@ -109,11 +132,23 @@ export const useChatStore = defineStore("chat",  () => {
         }
     }
 
+    watch(
+      messages,
+      (val: FormattedMessageState[]) => {
+        if(isHydrated.value) return;
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
+      },
+      { deep: true }
+    )
+
     return {
        messages: readonly(messages),
        isLoading: readonly(isLoading),
        isInitializing: readonly(isInitializing),
+       isHydrated: readonly(isHydrated),
        error: readonly(error),
+       hydrate,
        loadChatHistory,
        sendAIRequest,
        abortActiveRequest,
