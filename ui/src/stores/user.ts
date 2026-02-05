@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { useChatStore } from "./chat";
 
 interface UserState {
   userId: string | null;
@@ -12,16 +13,19 @@ export const useUserStore = defineStore("user", {
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.userId,
+    isAuthenticated: (state) => typeof state.userId === 'string' && state.userId.length > 0,
   },
 
   actions: {
     setUser(data: { userId: string; name: string }): void {
-      this.userId = data.userId;
-      this.name = data.name;
+      this.userId = data.userId.trim() || null;
+      this.name = data.name.trim() || null;
     },
     logout(): void {
       this.$reset();
+
+      const chatStore = useChatStore();
+      chatStore.reset();
     },
   },
   persist: true, //keep user data for reloads

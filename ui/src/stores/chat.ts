@@ -135,7 +135,7 @@ export const useChatStore = defineStore("chat",  () => {
     watch(
       messages,
       (val: FormattedMessageState[]) => {
-        if(isHydrated.value) return;
+        if(!isHydrated.value) return;
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
       },
