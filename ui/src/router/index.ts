@@ -1,8 +1,6 @@
 import { createRouter,  createWebHistory, type RouteRecordRaw } from "vue-router";
 import { useUserStore } from "../stores/user";
-import { ref, type Ref } from "vue";
-
-export const isRouteLoading: Ref<boolean, boolean> = ref(false);
+import { isRouteLoading } from "../composables/useRouteLoading";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -45,11 +43,15 @@ export const router = createRouter({
     }
 });
 
+router.onError((): void => {
+  isRouteLoading.value = false;
+});
+
 router.beforeEach((to, from, next) => {
   isRouteLoading.value = true;
   const user = useUserStore();
 
-  if(to.path === "/chat" && !user.isAuthenticated) {
+  if(to.name === "AI chat" && !user.isAuthenticated) {
     next({ name: "home", replace: true });
     return;
   }
