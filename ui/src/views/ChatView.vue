@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { defineAsyncComponent, onMounted } from 'vue';
+    import { defineAsyncComponent, nextTick, onMounted } from 'vue';
     import { useRouter } from 'vue-router';
     import { useUserStore } from '../stores/user';
     import { useChatStore } from '../stores/chat';
@@ -20,6 +20,7 @@
 
         if(!chatStore.messages.length){
             await chatStore.loadChatHistory();
+            await nextTick();
         }
     });
 

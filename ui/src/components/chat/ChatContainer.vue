@@ -14,19 +14,20 @@
 </script>
 
 <template>
-    <div v-if="chatStore.isInitializing" class="flex-1 overflow-y-auto p-4 space-y-4 animate-pulse">
-        <div class="h-3 w-1/2 rounded bg-white/30"></div>
-        <div class="h-3 w-3/4 rounded bg-white/20"></div>
-    </div>
-    <div
-        v-else
+    <div 
         ref="containerRef"
         class="flex-1 overflow-y-auto p-4 space-y-4"
         aria-live="polite"
     >
-        <ChatMessageList :messages="chatStore.messages" />
-        <ChatError v-if="chatStore.error" :error="chatStore.error"/>
-        <ChatTypingIndicator v-if="chatStore.isLoading" />
+        <div v-show="chatStore.isInitializing">
+            <div class="h-3 w-1/2 rounded bg-white/30"></div>
+            <div class="h-3 w-3/4 rounded bg-white/20"></div>
+        </div>
+        <div v-show="!chatStore.isInitializing">
+            <ChatMessageList :messages="chatStore.messages" />
+            <ChatError v-if="chatStore.error" :error="chatStore.error"/>
+            <ChatTypingIndicator v-if="chatStore.isLoading" />
+        </div>
     </div>
     <NewMessage v-if="!chatStore.isInitializing" @send="chatStore.sendAIRequest"/>
 </template>
