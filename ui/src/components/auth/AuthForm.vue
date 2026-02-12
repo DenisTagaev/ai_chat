@@ -34,15 +34,19 @@
         try {
             const { data } = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/users/login`,
-                { name: name.value, email: email.value }
+                { name: name.value.trim(), email: email.value.trim().toLowerCase() }
             );
+
+            if (!data?.user?.id || !data?.user?.name) {
+                throw new Error("Invalid server response");
+            }
 
             userStore.setUser({
                 userId: data.user.id,
                 name: data.user.name
             });
 
-            router.push('/chat');
+            await router.push('/chat');
         } catch {
             error.value = 'Something went wrong. Please try again.';
         } finally {
