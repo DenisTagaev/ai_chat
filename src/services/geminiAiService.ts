@@ -20,7 +20,7 @@ export class GeminiAiClient {
     });
   }
 
-  private formatChatHistory(history: GeminiMessage[]) {
+  private formatChatHistory(history: GeminiMessage[]): GeminiFormattedText[] {
     return history.map((h) => ({
       role: h.role,
       parts: [{ text: h.content }],
@@ -35,7 +35,7 @@ export class GeminiAiClient {
       throw new Error("User message is empty");
     }
 
-    const contents = [
+    const contents: GeminiFormattedText[] = [
       ...this.formatChatHistory(history),
       {
         role: "user" as const,
