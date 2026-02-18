@@ -1,55 +1,64 @@
-import { Chat, GenerateContentResponse, GoogleGenAI } from "@google/genai";
+import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { GeminiMessage } from "../utils/interfaces";
 
-export type GeminiStream<T> = AsyncGenerator<T, any, any>;
-export class geminiAiClient {
-  private geminiAiClient: GoogleGenAI;
+export interface GeminiFormattedText {
+    role: "user" | "model";
+    parts: {
+        text: string;
+    }[];
+}
+export class GeminiAiClient {
+  private readonly geminiAiClient: GoogleGenAI;
 
   constructor() {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+
     this.geminiAiClient = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
     });
   }
 
-  private createChat(history: GeminiMessage[]): Chat {
-    const formattedHistory: {
-      role: "user" | "model";
-      parts: {
-        text: string;
-      }[];
-    }[] = history.map((h: GeminiMessage) => ({
+  private formatChatHistory(history: GeminiMessage[]) {
+    return history.map((h) => ({
       role: h.role,
       parts: [{ text: h.content }],
     }));
-
-    return this.geminiAiClient.chats.create({
-      model: "gemini-2.5-flash",
-      history: formattedHistory,
-    });
   }
 
-  async streamResponse(
+  async generateResponse(
     userMessage: string,
-    history: GeminiMessage[] = []
-  ): Promise<AsyncGenerator<string>> {
-    const chat: Chat = this.createChat(history);
-
-    const stream: GeminiStream<GenerateContentResponse> =
-      await chat.sendMessageStream({
-        message: userMessage,
-      });
-
-    return this.readStream(stream);
-  }
-
-  private async *readStream(
-    stream: GeminiStream<GenerateContentResponse>
-  ): AsyncGenerator<string> {
-    for await (const chunk of stream) {
-      if (chunk?.text) {
-        yield chunk.text;
-      }
+    history: GeminiMessage[] = [],
+  ): Promise<string> {
+    if (!userMessage?.trim()) {
+      throw new Error("User message is empty");
     }
+
+    const contents = [
+      ...this.formatChatHistory(history),
+      {
+        role: "user" as const,
+        parts: [{ text: userMessage }],
+      },
+    ];
+
+    const response: GenerateContentResponse = await this.geminiAiClient.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+    });
+
+    // Safe extraction
+    const text: string =
+      response?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text ?? "")
+        .join("") ?? "";
+
+    if (!text) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    return text;
   }
 
   public _getClient(): GoogleGenAI {
@@ -57,4 +66,4 @@ export class geminiAiClient {
   }
 }
 
-export const geminiAiService = new geminiAiClient();
+export const geminiAiService = new GeminiAiClient();

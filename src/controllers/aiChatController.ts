@@ -44,7 +44,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
     if (!existingStreamUser.users.length) {
       return res.status(404).json({ error: "User not found" });
     }
-
+    //TODO: Rewrite for regular post body
     //on success send message to GeminiAI in stream
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
