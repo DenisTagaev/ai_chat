@@ -10,11 +10,11 @@ import {
   getStreamChatHistoryFromDB,
   saveStreamChatMessageToDB,
 } from "../db/operations";
-import { geminiAiService, GeminiStream } from "../services/geminiAiService";
+import { geminiAiService } from "../services/geminiAiService";
 import { getRedisClient } from "../services/redisService";
 import { ChatSelect } from "../db/schemas";
 import { APIResponse, Channel, UserResponse } from "stream-chat";
-import { GeminiMessage } from "../utils/interfaces";
+import { GeminiMessage, GeminiFormattedText } from "../utils/interfaces";
 
 const redisService = getRedisClient();
 
@@ -44,46 +44,40 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
     if (!existingStreamUser.users.length) {
       return res.status(404).json({ error: "User not found" });
     }
-    //TODO: Rewrite for regular post body
-    //on success send message to GeminiAI in stream
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
 
-    const formattedHistory: GeminiMessage[] = 
-      await getStreamChatHistoryFromDB(userId)
-        .then((r) => r.flatMap((chunk) => [
-          { role: "user" as const, content: String(chunk.message)},
-          { role: "model" as const, content: String(chunk.reply)}
-        ]));
-    const aiMessageStream: GeminiStream<string> = await geminiAiService.streamResponse(message, formattedHistory);
+    const cacheKey: string = `chat_history:${userId}`;
+    let chatHistory = await redisService.get<ChatSelect[]>(cacheKey);
 
-    let fullReply: string = "";
+    if(!chatHistory || !Array.isArray(chatHistory)) {
+      chatHistory = await getStreamChatHistoryFromDB(userId);
 
-    for await (const chunk of aiMessageStream) {
-      fullReply += chunk;
-      res.write(`data: ${chunk}\n\n`);
+      if(chatHistory.length > 0) {
+        await redisService.set(cacheKey, chatHistory, { ex: 600 });
+      }
     }
 
-    res.write("data: [STREAM_DONE]\n\n");
+    const formattedHistory: GeminiMessage[] = chatHistory.flatMap(
+      (chunk) => [
+        { role: "user" as const, content: String(chunk.message) },
+        { role: "model" as const, content: String(chunk.reply) },
+      ]
+    )
 
     // Gemini AI chat channel
+    const fullReply: string = await geminiAiService.generateResponse(message, formattedHistory);
     const channel: Channel = await createAiChatChannel(userId);
     await sendMessageToAi(channel, fullReply);
 
     // Save messages in Neon DB and clear cache
     await saveStreamChatMessageToDB(userId, message, fullReply);
-    await redisService.del(`chat_history:${userId}`);
-    
-    return res.end();
+    await redisService.del(cacheKey);
+
+    return res.status(200).json({
+      reply: fullReply
+    });
   } catch (err: any) {
     console.error("AI Chat Error:", err);
-    if (!res.headersSent) {
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-    res.write(`data: [ERROR]\n\n`);
-    return res.end();
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
 

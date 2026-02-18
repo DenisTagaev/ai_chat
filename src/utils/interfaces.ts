@@ -9,3 +9,9 @@ export interface GeminiMessage {
   role: "user" | "model";
   content: string;
 }
+
+export interface GeminiFormattedText extends Pick<GeminiMessage, "role">{
+    parts: {
+        text: string;
+    }[];
+}

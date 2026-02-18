@@ -1,12 +1,6 @@
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
-import { GeminiMessage } from "../utils/interfaces";
+import { GeminiFormattedText, GeminiMessage } from "../utils/interfaces";
 
-export interface GeminiFormattedText {
-    role: "user" | "model";
-    parts: {
-        text: string;
-    }[];
-}
 export class GeminiAiClient {
   private readonly geminiAiClient: GoogleGenAI;
 
