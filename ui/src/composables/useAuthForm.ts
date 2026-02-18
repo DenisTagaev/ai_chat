@@ -3,7 +3,6 @@ import { ref, watch } from "vue";
 export function useAuthForm() {
   const name = ref("");
   const email = ref("");
-  const loading = ref(false);
   const error = ref("");
 
   const validate = (): string | null => {
@@ -31,7 +30,6 @@ export function useAuthForm() {
   return {
     name,
     email,
-    loading,
     error,
     validate,
   };
