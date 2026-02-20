@@ -9,15 +9,13 @@ describe("geminiAiService", () => {
     expect(geminiAiService._getClient()).toBeDefined();
   });
 
-  it("createChat should format history correctly", () => {
+  it("formatChatHistory should correctly format the history", () => {
     const history = [
       { role: "user", content: "Hi" },
       { role: "model", content: "Hello there" },
     ];
-    const chat = (geminiAiService as any).createChat(history);
-    expect(chat).toBeDefined();
+    const formattedHistory = (geminiAiService as any).formatChatHistory(history);
 
-    const formattedHistory = (chat as any).history || [];
     expect(formattedHistory).toEqual([
       { role: "user", parts: [{ text: "Hi" }] },
       { role: "model", parts: [{ text: "Hello there" }] },
