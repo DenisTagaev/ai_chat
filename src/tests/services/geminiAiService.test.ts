@@ -8,7 +8,7 @@ describe("geminiAiService", () => {
   it("should initialize GoogleGenAI client", () => {
     expect(geminiAiService._getClient()).toBeDefined();
   });
-  
+
   it("createChat should format history correctly", () => {
     const history = [
       { role: "user", content: "Hi" },
@@ -24,23 +24,23 @@ describe("geminiAiService", () => {
     ]);
   });
 
-  it("should stream Gemini AI response tokens", async () => {
-    const mockStreamResponse = async function* () {
-      yield "Hello";
-      yield " World";
-    };
-
+  it("should return full Gemini response", async () => {
     jest
-      .spyOn(geminiAiService, "streamResponse")
-      .mockImplementation(
-        (): Promise<AsyncGenerator<string>> => Promise.resolve(mockStreamResponse())
-      );
-    
-    const aiStream = await geminiAiService.streamResponse("Hello");
-    let result = "";
-    for await (const chunk of aiStream) {
-      result += chunk;
-    }
+      .spyOn(geminiAiService, "generateResponse")
+      .mockResolvedValue("Hello World");
+
+    const result = await geminiAiService.generateResponse("Hello");
+
     expect(result).toBe("Hello World");
   });
+
+  it("should propagate errors from Gemini client", async() => {
+    jest
+      .spyOn(geminiAiService, "generateResponse")
+      .mockRejectedValue(new Error("Gemini failure"));
+
+    await expect(
+      geminiAiService.generateResponse("Hello")
+    ).rejects.toThrow("Gemini failure");
+  })
 });
