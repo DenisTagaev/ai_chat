@@ -1,7 +1,7 @@
-const redisMock = { 
+const redisMock = {
   del: jest.fn().mockResolvedValue(1),
   set: jest.fn(),
-  get: jest.fn() 
+  get: jest.fn()
 };
 
 jest.mock("../../services/redisService", () => ({
@@ -9,7 +9,6 @@ jest.mock("../../services/redisService", () => ({
 }));
 
 import request from "supertest";
-import { Request, Response } from "express";
 import app from "../../server";
 import {
   getNeonUserById,
@@ -23,7 +22,6 @@ import {
   sendMessageToAi,
 } from "../../services/streamChatService";
 import { geminiAiService } from "../../services/geminiAiService";
-import { handleAiChat } from "../../controllers/aiChatController";
 
 jest.mock("../../db/operations");
 jest.mock("../../services/geminiAiService");
@@ -74,7 +72,7 @@ describe("handleAiChat", () => {
     expect(res.body.error).toBe("Missing required fields");
   });
 
-  it("POST /chat - should open a new Stream chat", async () => {
+  it("POST /chat - should generate AI reply and persist chat", async () => {
     (getNeonUserById as jest.Mock).mockResolvedValue([{ id: "abc123" }]);
     (checkRegisteredStreamUser as jest.Mock).mockResolvedValue({
       users: [{ id: "abc123" }],
@@ -83,26 +81,32 @@ describe("handleAiChat", () => {
       { message: "Hello", reply: "World" },
     ]);
 
-    async function* mockStream() {
-      yield "Hello";
-      yield " World";
-    }
-    (geminiAiService.streamResponse as jest.Mock).mockResolvedValue(
-      mockStream()
+    (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+      "Hello World"
     );
-
-    (createAiChatChannel as jest.Mock).mockResolvedValue({ id: "chan1" });
+    (createAiChatChannel as jest.Mock).mockResolvedValue({ id: "chan1"});
     (sendMessageToAi as jest.Mock).mockResolvedValue({});
     (saveStreamChatMessageToDB as jest.Mock).mockResolvedValue({});
 
     const res = await request(app).post("/api/ai/chat").send(validBody);
 
-    expect(res.headers["content-type"]).toMatch(/text\/event-stream/);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ reply: "Hello World"});
+
+    expect(geminiAiService.generateResponse).toHaveBeenCalledWith(
+      validBody.message,
+      [
+        { role: "user", content: "Hello" },
+        { role: "model", content: "World" },
+      ]
+    );
+
     expect(saveStreamChatMessageToDB).toHaveBeenCalledWith(
       validBody.userId,
       validBody.message,
       "Hello World"
     );
+
     expect(sendMessageToAi).toHaveBeenCalledWith(
       { id: "chan1" },
       "Hello World"
@@ -117,33 +121,14 @@ describe("handleAiChat", () => {
       users: [{ id: validBody.userId }] as UserResponse[],
     } as APIResponse & { users: UserResponse[] });
 
-    (geminiAiService.streamResponse as jest.Mock).mockImplementation(
-      async function* () {
-        throw new Error("Gemini failure");
-      }
+    (geminiAiService.generateResponse as jest.Mock).mockRejectedValue(
+        new Error("Gemini failure")
     );
 
-    const req = { body: validBody } as Request;
+    const res = await request(app).post("/api/ai/chat").send(validBody);
 
-    const writeMock = jest.fn();
-    const endMock = jest.fn();
-    const setHeaderMock = jest.fn();
-    const flushHeadersMock = jest.fn();
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-      write: writeMock,
-      end: endMock,
-      setHeader: setHeaderMock,
-      flushHeaders: flushHeadersMock,
-      headersSent: false,
-    } as Partial<Response> as Response;
-
-    await handleAiChat(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal Server Error" });
   });
 });
 
