@@ -149,7 +149,7 @@ describe("getUserChatHistory", () => {
   });
 
   it("/POST chat-history - should return cached messages if available", async () => {
-    const cachedMessages = [{ id: 1, userId: "abc123", message: "Hello" }];
+    const cachedMessages = [{ message: "Hello", reply: "World" }];
 
     redisMock.get.mockResolvedValue(JSON.stringify(cachedMessages));
 
@@ -171,9 +171,10 @@ describe("getUserChatHistory", () => {
 
     expect(redisMock.get).toHaveBeenCalledWith("chat_history:abc123");
     expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith("abc123");
+
     expect(redisMock.set).toHaveBeenCalledWith(
       "chat_history:abc123",
-      JSON.stringify(dbMessages),
+      dbMessages,
       { ex: 600 }
     );
 
@@ -182,9 +183,16 @@ describe("getUserChatHistory", () => {
   });
 
   it("should delete cache if corrupted and fetch from DB", async () => {
-    redisMock.get.mockResolvedValue("INVALID JSON");
-    const dbMessages = [{ id: 99, userId: "abc123", message: "Clean DB data" }];
+    redisMock.get.mockResolvedValue([{ id: 1, userId: "abc123", message: "" }]);
+    const dbMessages = [{ id: 1, userId: "abc123", message: "Clean DB data" }];
+
     (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue(dbMessages);
+
+    jest
+      .spyOn(require("express").response, "json")
+      .mockImplementationOnce(() => {
+        throw new Error("Serialization failure");
+      });
 
     const res = await request(app).post("/api/ai/chat-history").send({ userId: "abc123" });
 
