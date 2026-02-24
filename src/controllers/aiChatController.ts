@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 
 import {
-  checkRegisteredStreamUser,
-  createAiChatChannel,
-  sendMessageToAi,
+  StreamChatService
 } from "../services/streamChatService";
 import {
   getNeonUserById,
@@ -14,7 +12,7 @@ import { geminiAiService } from "../services/geminiAiService";
 import { getRedisClient } from "../services/redisService";
 import { ChatSelect } from "../db/schemas";
 import { APIResponse, Channel, UserResponse } from "stream-chat";
-import { GeminiMessage, GeminiFormattedText } from "../utils/interfaces";
+import { GeminiMessage } from "../utils/interfaces";
 
 const redisService = getRedisClient();
 
@@ -39,7 +37,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
 
     const existingStreamUser: APIResponse & {
       users: Array<UserResponse>;
-    } = await checkRegisteredStreamUser(userId);
+    } = await StreamChatService.checkRegisteredStreamUser(userId);
 
     if (!existingStreamUser.users.length) {
       return res.status(404).json({ error: "User not found" });
@@ -65,8 +63,8 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
 
     // Gemini AI chat channel
     const fullReply: string = await geminiAiService.generateResponse(message, formattedHistory);
-    const channel: Channel = await createAiChatChannel(userId);
-    await sendMessageToAi(channel, fullReply);
+    const channel: Channel = await StreamChatService.createAiChatChannel(userId);
+    await StreamChatService.sendMessageToAi(channel, fullReply);
 
     // Save messages in Neon DB and clear cache
     await saveStreamChatMessageToDB(userId, message, fullReply);

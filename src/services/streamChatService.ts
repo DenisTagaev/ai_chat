@@ -64,3 +64,4 @@ export class StreamChatClient {
   }
 }
 
+export const StreamChatService = new StreamChatClient();

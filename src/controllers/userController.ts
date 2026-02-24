@@ -1,21 +1,13 @@
 import { Request, Response } from "express";
 import validator from "validator";
-import { APIResponse, StreamChat, UserResponse } from "stream-chat";
+import { APIResponse, UserResponse } from "stream-chat";
 import { getRedisClient } from "../services/redisService";
 import generateUserId from "../utils/idGenerator";
 import {
-  checkRegisteredStreamUser,
-  createStreamUser,
+  StreamChatService
 } from "../services/streamChatService";
 import { createNeonUser, getNeonUserById } from "../db/operations";
 import { getUserChatHistory } from "./aiChatController";
-
-
-// Init StreamChat client
-const streamChatClient: StreamChat = StreamChat.getInstance(
-  process.env.STREAM_API_KEY!,
-  process.env.STREAM_API_SECRET!
-);
 
 const redisService = getRedisClient();
 
@@ -68,7 +60,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
 
     const existingStreamUser: APIResponse & {
       users: Array<UserResponse>;
-    } = await checkRegisteredStreamUser(userId);
+    } = await StreamChatService.checkRegisteredStreamUser(userId);
 
     if (existingNeonUser.length && existingStreamUser.users.length) {
       // already fully registered → behave like login
@@ -80,7 +72,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
     }
 
     //create new user in Stream Chat
-    await createStreamUser({
+    await StreamChatService.createStreamUser({
       id: userId,
       email: sanitizedEmail,
       name,
@@ -100,7 +92,7 @@ export async function registerUser(req: Request, res: Response): Promise<any> {
     );
 
     // Generate StreamChat auth token
-    const token: string = streamChatClient.createToken(userId);
+    const token: string = StreamChatService.generateStreamUserToken(userId);
 
     return res.status(201).json({
       message: "User registered successfully.",
@@ -136,7 +128,7 @@ export async function loginUser(req: Request, res: Response): Promise<any> {
 
     const existingStreamUser: APIResponse & {
       users: Array<UserResponse>;
-    } = await checkRegisteredStreamUser(userId);
+    } = await StreamChatService.checkRegisteredStreamUser(userId);
 
     if(!existingStreamUser.users.length) return registerUser(req, res);
 
