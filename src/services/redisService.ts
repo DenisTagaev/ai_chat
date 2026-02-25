@@ -1,24 +1,38 @@
 import { Redis } from "@upstash/redis";
 
-let _redisClient: Redis | null = null;
+export class RedisService{
+  private readonly client: Redis;
 
-export function getRedisClient(): Redis {
-  if (_redisClient) return _redisClient;
+  constructor() {
+    const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
 
-  const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
+    if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
+      throw new Error(
+        "[Upstash Redis] Missing environment variables: REDIS URL and/or REDIS TOKEN"
+      );
+    }
 
-  if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
-    throw new Error(
-      "[Upstash Redis] Missing environment variables: UPSTASH_REDIS_REST_URL and/or UPSTASH_REDIS_REST_TOKEN"
-    );
+    this.client = new Redis({
+      url: UPSTASH_REDIS_REST_URL,
+      token: UPSTASH_REDIS_REST_TOKEN
+    });
+
+    console.log("Connected to Upstash Redis");
   }
 
-  _redisClient = new Redis({
-    url: UPSTASH_REDIS_REST_URL,
-    token: UPSTASH_REDIS_REST_TOKEN,
-  });
+  async get<T>(key: string): Promise<T | null> {
+    return this.client.get<T>(key);
+  }
 
-  console.log("Connected to Upstash Redis");
+  async set(
+    key: string,
+    value: [],
+    options? : { ex?: number }
+  ): Promise<unknown> {
+    return this.client.set(key, value, options)
+  };
 
-  return _redisClient;
+  public _getClient(): Redis {
+    return this.client;
+  }
 }
