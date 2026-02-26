@@ -1,6 +1,5 @@
-import { Redis } from "@upstash/redis";
-
-export class RedisService{
+import { Redis, SetCommandOptions } from "@upstash/redis";
+export class RedisClient{
   private readonly client: Redis;
 
   constructor() {
@@ -26,13 +25,24 @@ export class RedisService{
 
   async set(
     key: string,
-    value: [],
-    options? : { ex?: number }
+    value: { [x: string]: any },
+    options? : SetCommandOptions
   ): Promise<unknown> {
     return this.client.set(key, value, options)
   };
 
+  async del(key: string): Promise<number> {
+    return this.client.del(key);
+  }
+
   public _getClient(): Redis {
     return this.client;
   }
+}
+
+let redisService: RedisClient | null = null;
+
+export function getRedisClient(): RedisClient {
+  redisService ??= new RedisClient();
+  return redisService
 }
