@@ -4,31 +4,41 @@ import { StreamChatService } from "./streamChatService";
 import { createNeonUser, getNeonUserById } from "../db/operations";
 import { StreamUser } from "../utils/interfaces";
 import { getRedisClient } from "./redisService";
+import { validateAndNormalizeData } from "../utils/dataValidator";
+import { AuthResult } from "../utils/types";
+import { ChatHistoryService } from "./chatHistoryService";
 
 const redis = getRedisClient();
-
-export type AuthResult =
-  | { type: "registered"; user: StreamUser; token: string }
-  | { type: "login"; user: StreamUser }
-  | { type: "cooldown" }
-  | { type: "already_registered" };
 
 export class AuthService {
   static async authenticateOrRegister(
     name: string,
     email: string,
   ): Promise<AuthResult> {
-    const userId: string = generateUserId(email);
+    const validatedData:
+      | {
+          email: string;
+        }
+      | {
+          error: string;
+        } = validateAndNormalizeData(name, email);
+
+    if("error" in validatedData) {
+      return { type: "validation_error", error: validatedData.error }
+    }
+
+    const normalizedEmail: string = validatedData.email;
+    const userId: string = generateUserId(normalizedEmail);
 
     const user: StreamUser = {
       id: userId,
-      email,
+      email: normalizedEmail,
       name,
       role: "user",
     };
 
     // ---- cooldown protection ----
-    const cooldownKey: string = `register:${email}`;
+    const cooldownKey: string = `register:${normalizedEmail}`;
     const recentAttempt: Record<string, any> | null = await redis.get(cooldownKey);
 
     if (recentAttempt) {
@@ -47,7 +57,8 @@ export class AuthService {
 
     // fully registered → login
     if (existingNeonUser.length && existingStreamUser.users.length) {
-      return { type: "login", user };
+      const chatHistory = await ChatHistoryService.getHistory(userId);
+      return { type: "login", user, chatHistory };
     }
 
     // partial mismatch safety
@@ -57,9 +68,9 @@ export class AuthService {
 
     // ---- create new user ----
     await StreamChatService.createStreamUser(user);
-    await createNeonUser(userId, name, email);
+    await createNeonUser(userId, name, normalizedEmail);
 
-    await redis.set(`user:${email}`, user, { ex: 3600 });
+    await redis.set(`user:${normalizedEmail}`, user, { ex: 3600 });
 
     const token: string = StreamChatService.generateStreamUserToken(userId);
 
