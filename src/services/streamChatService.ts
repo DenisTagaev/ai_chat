@@ -1,39 +1,37 @@
 import { StreamChat, APIResponse, UserResponse, Channel } from "stream-chat";
 import { StreamUser } from "../utils/interfaces";
 
-export class StreamChatClient {
-  private readonly streamClient: StreamChat;
-
-  constructor() {
+export class StreamChatService {
+  private static readonly streamClient: StreamChat = (() => {
     if(!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
       throw new Error("Stream API credentials are not defined");
     }
 
-    this.streamClient = StreamChat.getInstance(
+    return StreamChat.getInstance(
       process.env.STREAM_API_KEY,
       process.env.STREAM_API_SECRET,
     );
-  }
+  })();
 
   /** Check if a Stream Chat user exists */
-  async checkRegisteredStreamUser(
+  static async checkRegisteredStreamUser(
     id: string
   ): Promise<APIResponse & { users: UserResponse[] }> {
     return await this.streamClient.queryUsers({ id: { $eq: id } });
   }
 
   /** Create or update a Stream Chat user */
-  async createStreamUser(user: StreamUser) {
+  static async createStreamUser(user: StreamUser) {
     return await this.streamClient.upsertUser(user as UserResponse);
   }
 
   /** Generate a Stream Chat token for the given user ID */
-  generateStreamUserToken(userId: string): string {
+  static generateStreamUserToken(userId: string): string {
     return this.streamClient.createToken(userId);
   }
 
   /** Create a messaging channel for a user */
-  async createAiChatChannel(userId: string): Promise<Channel> {
+  static async createAiChatChannel(userId: string): Promise<Channel> {
     const channel = this.streamClient.channel(
       "messaging",
       `chat-${userId}`,
@@ -46,7 +44,7 @@ export class StreamChatClient {
   }
 
   /** Send an AI message to the user's channel */
-  async sendMessageToAi(channel: Channel, message: string) {
+  static async sendMessageToAi(channel: Channel, message: string) {
     if(!message.trim()) {
       throw new Error("AI bot error");
     }
@@ -59,9 +57,7 @@ export class StreamChatClient {
     );
   }
 
-  public _getClient(): StreamChat {
+  static _getClient(): StreamChat {
     return this.streamClient;
   }
 }
-
-export const StreamChatService = new StreamChatClient();
