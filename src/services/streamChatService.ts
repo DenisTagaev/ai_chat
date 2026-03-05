@@ -32,14 +32,15 @@ export class StreamChatService {
 
   /** Create a messaging channel for a user */
   static async createAiChatChannel(userId: string): Promise<Channel> {
-    const channel = this.streamClient.channel(
+    const channel: Channel = this.streamClient.channel(
       "messaging",
       `chat-${userId}`,
       {
+        members: [userId],
         created_by_id: "ai_bot",
       }
     );
-    await channel.create();
+    await channel.watch();
     return channel;
   }
 
