@@ -46,7 +46,7 @@ export class ChatService {
     );
 
     // ---- send to stream ---- //
-    const channel: Channel = await StreamChatService.createAiChatChannel(userId);
+    const channel: Channel = StreamChatService.getAiChannel(userId);
     await StreamChatService.sendMessageToAi(channel, fullReply);
 
     // ---- persist ---- //

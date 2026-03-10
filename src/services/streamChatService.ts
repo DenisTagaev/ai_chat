@@ -27,11 +27,6 @@ export class StreamChatService {
     return await this.streamClient.upsertUser(user as UserResponse);
   }
 
-  /** Generate a Stream Chat token for the given user ID */
-  static generateStreamUserToken(userId: string): string {
-    return this.streamClient.createToken(userId);
-  }
-
   /** Create a messaging channel for a user */
   static async createAiChatChannel(userId: string): Promise<Channel> {
     const channel: Channel = this.streamClient.channel(

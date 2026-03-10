@@ -30,7 +30,6 @@ export class AuthResultMapper {
         return res.status(201).json({
           message: "User registered successfully.",
           user: result.user,
-          token: result.token,
         });
     }
   }

@@ -9,7 +9,6 @@ export type AuthResult =
   | {
       type: "registered";
       user: StreamUser;
-      token: string;
     };
 
 export type ChatResponse =

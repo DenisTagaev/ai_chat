@@ -69,15 +69,13 @@ export class AuthService {
     // ---- create new user ----
     await StreamChatService.createStreamUser(user);
     await createNeonUser(userId, name, normalizedEmail);
+    await StreamChatService.createAiChatChannel(userId);
 
     await redis.set(`user:${normalizedEmail}`, user, { ex: 3600 });
-
-    const token: string = StreamChatService.generateStreamUserToken(userId);
 
     return {
       type: "registered",
       user,
-      token,
     };
   }
 }
