@@ -44,6 +44,10 @@ export class StreamChatService {
     return channel;
   }
 
+  static getAiChannel(userId: string): Channel {
+    return this.streamClient.channel("messaging", `chat-${userId}`);
+  }
+
   /** Send an AI message to the user's channel */
   static async sendMessageToAi(channel: Channel, message: string) {
     if(!message.trim()) {
