@@ -1,12 +1,12 @@
-import { APIResponse, UserResponse } from "stream-chat";
 import generateUserId from "../utils/idGenerator";
 import { StreamChatService } from "./streamChatService";
-import { createNeonUser, getNeonUserById } from "../db/operations";
+import { createNeonUser } from "../db/operations";
 import { StreamUser } from "../utils/interfaces";
 import { getRedisClient } from "./redisService";
 import { validateAndNormalizeData } from "../utils/dataValidator";
 import { AuthResult } from "../utils/types";
 import { ChatHistoryService } from "./chatHistoryService";
+import { UserService } from "./userService";
 
 const redis = getRedisClient();
 
@@ -48,21 +48,16 @@ export class AuthService {
     await redis.set(cooldownKey, user, { ex: 10 });
 
     // ---- DB checks ----
-    const existingNeonUser: { [x: string]: any }[] =
-      await getNeonUserById(userId);
-
-    const existingStreamUser: APIResponse & {
-      users: Array<UserResponse>;
-    } = await StreamChatService.checkRegisteredStreamUser(userId);
+    const { neonExists, streamExists } = await UserService.verifyUserExists(userId);
 
     // fully registered → login
-    if (existingNeonUser.length && existingStreamUser.users.length) {
+    if (neonExists && streamExists) {
       const chatHistory = await ChatHistoryService.getHistory(userId);
       return { type: "login", user, chatHistory };
     }
 
     // partial mismatch safety
-    if (existingNeonUser.length || existingStreamUser.users.length) {
+    if (neonExists || streamExists) {
       return { type: "already_registered" };
     }
 

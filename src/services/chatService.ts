@@ -1,10 +1,11 @@
-import { getNeonUserById, saveStreamChatMessageToDB } from "../db/operations";
+import { saveStreamChatMessageToDB } from "../db/operations";
 import { StreamChatService } from "./streamChatService";
 import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
 import { GeminiMessage } from "../utils/interfaces";
 import { ChatResponse } from "../utils/types";
-import { APIResponse, Channel, UserResponse } from "stream-chat";
+import { Channel } from "stream-chat";
+import { UserService } from "./userService";
 
 export class ChatService {
   static async handleAiChat(
@@ -16,20 +17,10 @@ export class ChatService {
     }
 
     // ---- verify user exists ---- //
-    const neonUser: {
-      [x: string]: any;
-    }[] = await getNeonUserById(userId);
-    if (!neonUser.length) {
-      return { type: "user_not_found" };
-    }
+    const { neonExists, streamExists } =
+      await UserService.verifyUserExists(userId);
 
-    const streamUser: APIResponse & {
-      users: UserResponse[];
-    } = await StreamChatService.checkRegisteredStreamUser(userId);
-
-    if (!streamUser.users.length) {
-      return { type: "user_not_found" };
-    }
+    if(!neonExists || !streamExists) return { type: "user_not_found"}
 
     const chatHistory: {
       [x: string]: any;
