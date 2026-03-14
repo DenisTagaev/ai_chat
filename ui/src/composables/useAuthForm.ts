@@ -4,8 +4,10 @@ export function useAuthForm() {
   const name = ref("");
   const email = ref("");
   const error = ref("");
+  const loading = ref();
 
   const validate = (): string | null => {
+    loading.value = true;
     const trimmedName: string = name.value.trim();
     const normalizedEmail: string = email.value.trim().toLowerCase();
 

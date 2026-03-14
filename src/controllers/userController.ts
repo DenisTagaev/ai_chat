@@ -3,7 +3,7 @@ import { AuthService } from "../services/authService";
 import { AuthResultMapper } from "../middleware/authResultMapper";
 import { AuthResult } from "../utils/types";
 
-async function handleAuth(req: Request, res: Response): Promise<any> {
+export async function handleAuth(req: Request, res: Response): Promise<any> {
   const { name, email } = req.body;
 
   try {
@@ -18,6 +18,3 @@ async function handleAuth(req: Request, res: Response): Promise<any> {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
-
-export const registerUser = handleAuth;
-export const loginUser = handleAuth;
