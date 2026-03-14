@@ -4,10 +4,9 @@ export function useAuthForm() {
   const name = ref("");
   const email = ref("");
   const error = ref("");
-  const loading = ref();
+  const loading = ref(false);
 
   const validate = (): string | null => {
-    loading.value = true;
     const trimmedName: string = name.value.trim();
     const normalizedEmail: string = email.value.trim().toLowerCase();
 
@@ -21,7 +20,6 @@ export function useAuthForm() {
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail))
       return "Please enter a valid email address.";
-
     return null;
   };
 
@@ -33,6 +31,7 @@ export function useAuthForm() {
     name,
     email,
     error,
+    loading,
     validate,
   };
 }
