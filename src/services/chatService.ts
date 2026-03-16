@@ -17,10 +17,12 @@ export class ChatService {
     }
 
     // ---- verify user exists ---- //
-    const { neonExists, streamExists } =
+    const registrationState: string =
       await UserService.getUserRegisterState(userId);
 
-    if(!neonExists || !streamExists) return { type: "user_not_found"}
+    if(registrationState === "inconsistent_registration") {
+      return { type: "user_not_found"}
+    }
 
     const chatHistory: {
       [x: string]: any;

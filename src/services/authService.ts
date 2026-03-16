@@ -48,17 +48,17 @@ export class AuthService {
     await redis.set(cooldownKey, user, { ex: 10 });
 
     // ---- DB checks ----
-    const registrationState: string = await UserService.getUserRegisterState(userId);
+    const state: string = await UserService.getUserRegisterState(userId);
 
-    switch (registrationState) {
+    switch (state) {
       case "fully_registered":
-        return { type: "registered", user };
+        return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
 
-      case "inconsistent":
+      case "inconsistent_registration":
         return { type: "already_registered" };
 
       case "not_registered":
-        break; // continue to registration
+        break;
     }
 
     // ---- create new user ----
