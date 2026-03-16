@@ -7,7 +7,7 @@ import { ChatResponse } from "../utils/types";
 import { UserService } from "./userService";
 
 export class ChatService {
-  static async handleAiChat(
+  static async interactWithChat(
     message: string,
     userId: string,
   ): Promise<ChatResponse> {
@@ -44,7 +44,7 @@ export class ChatService {
     await saveStreamChatMessageToDB(userId, message, fullReply);
 
     // --- clear cache --- //
-    await ChatHistoryService.invalidateHistory(userId);
+    await ChatHistoryService.addMessageToHistory(userId, message, fullReply);
 
     return { type: "success", reply: fullReply };
   }

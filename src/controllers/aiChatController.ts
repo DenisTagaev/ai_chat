@@ -10,7 +10,7 @@ import { ChatHistoryService } from "../services/chatHistoryService";
 export async function handleAiChat(req: Request, res: Response): Promise<any> {
   try {
     const { message, userId } = req.body;
-    const chatResponse: ChatResponse = await ChatService.handleAiChat(message, userId);
+    const chatResponse: ChatResponse = await ChatService.interactWithChat(message, userId);
 
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: any) {
