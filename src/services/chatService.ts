@@ -4,7 +4,6 @@ import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
 import { GeminiMessage } from "../utils/interfaces";
 import { ChatResponse } from "../utils/types";
-import { Channel } from "stream-chat";
 import { UserService } from "./userService";
 
 export class ChatService {
@@ -39,8 +38,7 @@ export class ChatService {
     );
 
     // ---- send to stream ---- //
-    const channel: Channel = StreamChatService.getAiChannel(userId);
-    await StreamChatService.sendMessageToAi(channel, fullReply);
+    await StreamChatService.sendMessageToAi(userId, fullReply);
 
     // ---- persist ---- //
     await saveStreamChatMessageToDB(userId, message, fullReply);

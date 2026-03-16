@@ -16,7 +16,7 @@ export class UserService {
 
     const existingStreamUser: APIResponse & {
       users: UserResponse[];
-    } = await StreamChatService.checkRegisteredStreamUser(userId);
+    } = await StreamChatService.getStreamUser(userId);
 
     if(existingNeonUser && existingStreamUser) return "registered";
     if (!existingNeonUser || !existingStreamUser) return "unregistered";
