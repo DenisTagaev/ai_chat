@@ -48,17 +48,17 @@ export class AuthService {
     await redis.set(cooldownKey, user, { ex: 10 });
 
     // ---- DB checks ----
-    const { neonExists, streamExists } = await UserService.verifyUserExists(userId);
+    const registrationState: string = await UserService.getUserRegisterState(userId);
 
-    // fully registered → login
-    if (neonExists && streamExists) {
-      const chatHistory = await ChatHistoryService.getHistory(userId);
-      return { type: "login", user, chatHistory };
-    }
+    switch (registrationState) {
+      case "fully_registered":
+        return { type: "registered", user };
 
-    // partial mismatch safety
-    if (neonExists || streamExists) {
-      return { type: "already_registered" };
+      case "inconsistent":
+        return { type: "already_registered" };
+
+      case "not_registered":
+        break; // continue to registration
     }
 
     // ---- create new user ----

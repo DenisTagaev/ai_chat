@@ -15,3 +15,8 @@ export type ChatResponse =
   | { type: "validation_error" }
   | { type: "user_not_found" }
   | { type: "success"; reply: string };
+
+export type UserRegistrationState =
+  | "registered"
+  | "unregistered"
+  | "inconsistent_registration";

@@ -18,7 +18,7 @@ export class ChatService {
 
     // ---- verify user exists ---- //
     const { neonExists, streamExists } =
-      await UserService.verifyUserExists(userId);
+      await UserService.getUserRegisterState(userId);
 
     if(!neonExists || !streamExists) return { type: "user_not_found"}
 

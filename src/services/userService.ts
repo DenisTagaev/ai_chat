@@ -1,16 +1,15 @@
 import { APIResponse, UserResponse } from "stream-chat";
 import { getNeonUserById } from "../db/operations";
 import { StreamChatService } from "./streamChatService";
+import { UserRegistrationState } from "../utils/types";
 
 
 export class UserService {
   /**
    * Verify user exists in both DB and Stream
    */
-  static async verifyUserExists(userId: string): Promise<{
-        neonExists: boolean;
-        streamExists: boolean;
-    }> {
+  static async getUserRegisterState(userId: string):
+   Promise<UserRegistrationState> {
     const existingNeonUser: {
       [x: string]: any;
     }[] = await getNeonUserById(userId);
@@ -19,9 +18,9 @@ export class UserService {
       users: UserResponse[];
     } = await StreamChatService.checkRegisteredStreamUser(userId);
 
-    return {
-      neonExists: existingNeonUser.length > 0,
-      streamExists: existingStreamUser.users.length > 0,
-    };
+    if(existingNeonUser && existingStreamUser) return "registered";
+    if (!existingNeonUser || !existingStreamUser) return "unregistered";
+
+    return "inconsistent_registration";
   }
 }
