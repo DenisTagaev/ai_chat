@@ -4,11 +4,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "test": "jest --coverage --runInBand",
     "test:watch": "jest --watchAll",
-    "start": "node dist/server.js"
+    "start": "node dist/index.js"
   },
   "author": "",
   "license": "ISC",

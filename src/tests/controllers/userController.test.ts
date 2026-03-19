@@ -1,132 +1,80 @@
 import request from "supertest";
 import app from "../../server";
-import { createNeonUser, getNeonUserById } from "../../db/operations";
-import * as streamService from "../../services/streamChatService";
-import { APIResponse, UserResponse } from "stream-chat";
-import generateUserId from "../../utils/idGenerator";
-import { normalizeEmail, isEmail } from "validator";
-// import { getRedisClient } from "../../services/redisService";
+import { AuthService } from "../../services/authService";
+import { AuthResultMapper } from "../../middleware/authResultMapper";
 
-jest.mock("validator");
-// jest.mock("@upstash/redis");
-jest.mock("../../db/operations");
-jest.mock("../../services/streamChatService");
+jest.mock("../../services/authService");
+jest.mock("../../middleware/authResultMapper");
 
-describe("User Controller", () => {
-  const testUser = {
-    userId: generateUserId("test@example.com"),
-    name: "Test User",
-    email: "test@example.com",
+describe("Auth Controller", () => {
+  const validBody = {
+    name: "Denis",
+    email: "denis@test.com",
   };
 
-  // beforeEach(() => {
-  //   jest.clearAllMocks();
-  //   jest.spyOn(streamService, "checkRegisteredStreamUser").mockResolvedValue({
-  //     users: [] as UserResponse[],
-  //   } as APIResponse & { users: UserResponse[] });
-  //   jest
-  //     .spyOn(streamService, "createStreamUser")
-  //     .mockResolvedValue(
-  //       {} as APIResponse & { users: { [key: string]: UserResponse } }
-  //     );
-  // });
-
-  afterAll(async() => {
-    app.listen().close();
-  })
-
-  it("should return 400 for invalid name", async () => {
-    const res = await request(app)
-      .post("/api/users/register")
-      .send({ name: "A", email: "test1@example.com" });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Invalid name format.");
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should return 400 for invalid email address", async () => {
-    const res = await request(app)
-      .post("/api/users/register")
-      .send({ name: "Valid Name", email: "invalid-email" });
+  // -----------------------------
+  // POST /api/users/auth (adjust if route differs)
+  // -----------------------------
+  describe("POST /api/users/auth", () => {
+    it("should call AuthService and call mapper for response", async () => {
+      const mockAuthResult = {
+        type: "fully_registered",
+        user: { id: "123", name: "Denis" },
+        chatHistory: [{ message: "Hi", reply: "Hello" }],
+      };
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Invalid email address.");
-  });
+      (AuthService.authenticateOrRegister as jest.Mock).mockResolvedValue(
+        mockAuthResult,
+      );
 
-  it("should return 400 when email sanitization fails", async () => {
-    (isEmail as jest.Mock).mockReturnValue(true);
-    (normalizeEmail as jest.Mock).mockReturnValue(null);
+      (AuthResultMapper.toHttpResponse as jest.Mock).mockImplementation(
+        (data, res) => res.status(200).json(data),
+      );
 
-    const res = await request(app)
-      .post("/api/users/register")
-      .send({ name: "John Doe", email: "test2@gmail.com" });
+      const res = await request(app).post("/api/users/auth").send(validBody);
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Invalid email format.");
-  });
+      expect(AuthService.authenticateOrRegister).toHaveBeenCalledWith(
+        validBody.name,
+        validBody.email,
+      );
 
-  it("should return 409 if user already exists in NeonDB", async () => {
-    testUser.email = "test3@gmail.com";
-    (getNeonUserById as jest.Mock).mockResolvedValue([{ id: testUser.userId }]);
-    (streamService.checkRegisteredStreamUser as jest.Mock).mockResolvedValue({ users: [] });
-    (isEmail as jest.Mock).mockReturnValue(true);
-    (normalizeEmail as jest.Mock).mockReturnValue(testUser.email);
-    const res = await request(app).post("/api/users/register").send(testUser);
+      expect(AuthResultMapper.toHttpResponse).toHaveBeenCalledWith(
+        mockAuthResult,
+        expect.any(Object),
+      );
 
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe("User already registered.");
-  });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockAuthResult);
+    });
 
-  it("should return 409 if user already exists in StreamChat", async () => {
-    testUser.email="test4@gmail.com";
-    (getNeonUserById as jest.Mock).mockResolvedValue([]);
-    (streamService.checkRegisteredStreamUser as jest.Mock).mockResolvedValue({
-      users: [{ id: testUser.userId }],
-    } as APIResponse & { users: UserResponse[] });
-    (isEmail as jest.Mock).mockReturnValue(true);
-    (normalizeEmail as jest.Mock).mockReturnValue(testUser.email);
-    const res = await request(app).post("/api/users/register").send(testUser);
+    it("should handle service error and return 500", async () => {
+      (AuthService.authenticateOrRegister as jest.Mock).mockRejectedValue(
+        new Error("Auth failure"),
+      );
 
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe("User already registered.");
-  });
+      const res = await request(app).post("/api/users/auth").send(validBody);
 
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal Server Error" });
+    });
 
-  it("POST /register — should register a user", async () => {
-    (createNeonUser as jest.Mock).mockResolvedValue({});
-    (streamService.createStreamUser as jest.Mock).mockResolvedValue(testUser);
-    (getNeonUserById as jest.Mock).mockResolvedValue([]);
-    (isEmail as jest.Mock).mockReturnValue(true);
-    (normalizeEmail as jest.Mock).mockReturnValue(testUser.email);
+    it("should pass undefined values if fields are missing", async () => {
+      (AuthService.authenticateOrRegister as jest.Mock).mockResolvedValue({});
 
-    const res = await request(app)
-      .post("/api/users/register")
-      .send(testUser)
-      .expect(201);
+      (AuthResultMapper.toHttpResponse as jest.Mock).mockImplementation(
+        (_data, res) => res.status(200).json({}),
+      );
 
-    expect(createNeonUser).toHaveBeenCalledWith(
-      generateUserId(testUser.email),
-      testUser.name,
-      testUser.email
-    );
-    expect(streamService.createStreamUser).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: expect.any(String),
-        name: testUser.name,
-        email: testUser.email,
-        role: "user",
-      })
-    );
-    expect(res.body.user.id).toBe(generateUserId(testUser.email));
-    expect(res.body.message).toBe("User registered successfully.");
-  });
+      await request(app).post("/api/users/auth").send({});
 
-  it("POST /register — should reject invalid fields", async () => {
-    const res = await request(app)
-      .post("/api/users/register")
-      .send({})
-      .expect(400);
-
-    expect(res.body.error).toBeDefined();
+      expect(AuthService.authenticateOrRegister).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
+    });
   });
 });
