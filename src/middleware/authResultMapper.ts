@@ -31,6 +31,11 @@ export class AuthResultMapper {
           message: "User registered successfully.",
           user: result.user,
         });
+
+      default:
+        return res.status(500).json({
+          error: "Unknown auth result type",
+        });
     }
   }
 }
