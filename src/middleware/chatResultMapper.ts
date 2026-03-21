@@ -21,6 +21,10 @@ export class ChatResultMapper {
         return res.status(200).json({
           reply: result.reply,
         });
+      default:
+        return res.status(500).json({
+          error: "Unknown chat result type",
+        });
     }
   }
 }

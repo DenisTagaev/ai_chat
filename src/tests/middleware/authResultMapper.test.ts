@@ -112,10 +112,7 @@ describe("AuthResultMapper", () => {
   // default
   // -----------------------------
   it("should handle unknown result safely", () => {
-    const result: AuthResult = {
-      type: "validation_error",
-      error: "Internal auth error",
-    };
+    const result = { type: "unknown" } as any;
 
     AuthResultMapper.toHttpResponse(result, res);
 
