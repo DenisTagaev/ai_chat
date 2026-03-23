@@ -1,44 +1,133 @@
-import { geminiAiService } from "../../services/geminiAiService";
+import { GeminiAiClient } from "../../services/geminiAiService";
+import { GoogleGenAI } from "@google/genai";
+import { GeminiMessage } from "../../utils/interfaces";
 
-describe("geminiAiService", () => {
+jest.mock("@google/genai");
+
+describe("geminiAiClient", () => {
+  let mockGeneratedContent: jest.Mock;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.GEMINI_API_KEY = "test-key";
+    mockGeneratedContent = jest.fn();
+
+    (GoogleGenAI as jest.Mock).mockImplementation(() => ({
+      models: {
+        generateContent: mockGeneratedContent,
+      },
+    }));
   });
 
-  it("should initialize GoogleGenAI client", () => {
-    expect(geminiAiService._getClient()).toBeDefined();
+  // -----------------------------
+  // constructor
+  // -----------------------------
+  it("should throw an exception if API key is missing", () => {
+    delete process.env.GEMINI_API_KEY;
+
+    expect(() => new GeminiAiClient()).toThrow("GEMINI_API_KEY is not defined");
   });
 
-  it("formatChatHistory should correctly format the history", () => {
-    const history = [
+  it("should initialize new client with API key from the .env", () => {
+    const client: GeminiAiClient = new GeminiAiClient();
+
+    expect(GoogleGenAI).toHaveBeenCalledWith({
+      apiKey: "test-key",
+    });
+
+    expect(client._getClient()).toBeDefined();
+  });
+
+  // -----------------------------
+  // generateResponse
+  // -----------------------------
+  it("should throw an exception if userMessage is empty", async () => {
+    const client: GeminiAiClient = new GeminiAiClient();
+
+    await expect(client.generateResponse("")).rejects.toThrow(
+      "User message is empty",
+    );
+  });
+
+  it("should call Gemini API with formatted history and return response", async () => {
+    const client: GeminiAiClient = new GeminiAiClient();
+
+    mockGeneratedContent.mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ text: "Hello" }, { text: " World" }],
+          },
+        },
+      ],
+    });
+
+    const history: GeminiMessage[] = [
       { role: "user", content: "Hi" },
-      { role: "model", content: "Hello there" },
+      { role: "model", content: "Hello" },
     ];
-    const formattedHistory = (geminiAiService as any).formatChatHistory(history);
 
-    expect(formattedHistory).toEqual([
-      { role: "user", parts: [{ text: "Hi" }] },
-      { role: "model", parts: [{ text: "Hello there" }] },
-    ]);
-  });
+    const result: string = await client.generateResponse("How are you?", history);
 
-  it("should return full Gemini response", async () => {
-    jest
-      .spyOn(geminiAiService, "generateResponse")
-      .mockResolvedValue("Hello World");
-
-    const result = await geminiAiService.generateResponse("Hello");
+    expect(mockGeneratedContent).toHaveBeenCalledWith({
+      model: "gemini-2.5-flash",
+      contents: [
+        { role: "user", parts: [{ text: "Hi" }] },
+        { role: "model", parts: [{ text: "Hello" }] },
+        { role: "user", parts: [{ text: "How are you?" }] },
+      ],
+    });
 
     expect(result).toBe("Hello World");
   });
 
-  it("should propagate errors from Gemini client", async() => {
-    jest
-      .spyOn(geminiAiService, "generateResponse")
-      .mockRejectedValue(new Error("Gemini failure"));
+  it("should throw an error if Gemini call returns empty response", async () => {
+    const client: GeminiAiClient = new GeminiAiClient();
 
-    await expect(
-      geminiAiService.generateResponse("Hello")
-    ).rejects.toThrow("Gemini failure");
-  })
+    mockGeneratedContent.mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ text: "" }],
+          },
+        },
+      ],
+    });
+
+    await expect(client.generateResponse("Hello")).rejects.toThrow(
+      "Empty response from Gemini",
+    );
+  });
+
+  it("should handle parts with missing text using fallback", async () => {
+    const client: GeminiAiClient = new GeminiAiClient();
+
+    mockGeneratedContent.mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [
+              { text: "Hello" },
+              {},
+              { text: " World" },
+            ],
+          },
+        },
+      ],
+    });
+
+    const result: string = await client.generateResponse("Hi");
+
+    expect(result).toBe("Hello World");
+  });
+
+  it("should throw an error if response structure is invalid", async () => {
+    const client: GeminiAiClient = new GeminiAiClient();
+
+    mockGeneratedContent.mockResolvedValue({});
+
+    await expect(client.generateResponse("Hello")).rejects.toThrow(
+      "Empty response from Gemini",
+    );
+  });
 });
