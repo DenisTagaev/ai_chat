@@ -1,78 +1,136 @@
+import { RedisClient } from "../../services/redisService";
 import { Redis } from "@upstash/redis";
 
-const mockRedisConstructor = jest.fn();
-jest.mock("@upstash/redis", () => {
-  return {
-    Redis: jest.fn().mockImplementation((args) => {
-      mockRedisConstructor(args);
-      return { __mocked: true, args };
-    }),
-  };
-});
+jest.mock("@upstash/redis");
 
-import { getRedisClient } from "../../services/redisService";
-
-describe("redisService", () => {
-  const OLD_ENV = process.env;
+describe("RedisClient", () => {
+  let mockGet: jest.Mock;
+  let mockSet: jest.Mock;
+  let mockDel: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.resetModules();
-    process.env = { ...OLD_ENV };
+
+    process.env.UPSTASH_REDIS_REST_URL = "test-url";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+
+    mockGet = jest.fn();
+    mockSet = jest.fn();
+    mockDel = jest.fn();
+
+    (Redis as unknown as jest.Mock).mockImplementation(() => ({
+      get: mockGet,
+      set: mockSet,
+      del: mockDel,
+    }));
   });
 
-  afterAll(() => {
-    process.env = OLD_ENV;
-  });
-
-  function loadIsolatedService() {
-    let getRedisClient: any;
-    jest.isolateModules(() => {
-      getRedisClient = require("../../services/redisService").getRedisClient;
-    });
-    return getRedisClient;
-  }
-
-  it("throws error when env variables are missing", () => {
+  // -----------------------------
+  // constructor
+  // -----------------------------
+  it("should throw an error if env variables are missing", () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    expect(() => getRedisClient()).toThrow(
-      "[Upstash Redis] Missing environment variables: UPSTASH_REDIS_REST_URL and/or UPSTASH_REDIS_REST_TOKEN"
+    expect(() => new RedisClient()).toThrow(
+      "[Upstash Redis] Missing environment variables: REDIS URL and/or REDIS TOKEN",
     );
   });
 
-  it("creates a new Redis client when not initialized", () => {
-    process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io";
-    process.env.UPSTASH_REDIS_REST_TOKEN = "token123";
+  it("should initialize Redis client with env variables", () => {
+    const client: RedisClient = new RedisClient();
 
-    const client = getRedisClient();
-
-    expect(Redis).toHaveBeenCalledTimes(1);
-    expect(mockRedisConstructor).toHaveBeenCalledWith({
-      url: "https://fake.upstash.io",
-      token: "token123",
+    expect(Redis).toHaveBeenCalledWith({
+      url: "test-url",
+      token: "test-token",
     });
 
-    expect(client).toEqual({
-      __mocked: true,
-      args: {
-        url: "https://fake.upstash.io",
-        token: "token123",
-      },
-    });
+    expect(client._getClient()).toBeDefined();
   });
 
-  it("returns the same client on subsequent calls (singleton)", () => {
-    process.env.UPSTASH_REDIS_REST_URL = "https://fake.upstash.io";
-    process.env.UPSTASH_REDIS_REST_TOKEN = "token123";
+  // -----------------------------
+  // get
+  // -----------------------------
+  it("should call get and return a client by the key", async () => {
+    const client: RedisClient = new RedisClient();
 
-    const RedisClient = loadIsolatedService();
+    mockGet.mockResolvedValue("value");
 
-    const client1 = RedisClient();
-    const client2 = RedisClient();
+    const result: unknown = await client.get("key");
+
+    expect(mockGet).toHaveBeenCalledWith("key");
+    expect(result).toBe("value");
+  });
+
+  // -----------------------------
+  // set
+  // -----------------------------
+  it("should call set without options", async () => {
+    const client = new RedisClient();
+
+    const value = { foo: "bar" };
+
+    mockSet.mockResolvedValue("OK");
+
+    const result = await client.set("key", value);
+
+    expect(mockSet).toHaveBeenCalledWith("key", value, undefined);
+    expect(result).toBe("OK");
+  });
+
+  it("should call set with key, value and options", async () => {
+    const client: RedisClient = new RedisClient();
+
+    const value: { test: any } = { test: "string" };
+    const options: { ex: number } = { ex: 10 };
+
+    mockSet.mockResolvedValue("OK");
+
+    const result: unknown = await client.set("key", value, options);
+
+    expect(mockSet).toHaveBeenCalledWith("key", value, options);
+    expect(result).toBe("OK");
+  });
+
+  // -----------------------------
+  // del
+  // -----------------------------
+  it("should call del and remove corresponding key", async () => {
+    const client: RedisClient = new RedisClient();
+
+    mockDel.mockResolvedValue(1);
+
+    const result: unknown = await client.del("key");
+
+    expect(mockDel).toHaveBeenCalledWith("key");
+    expect(result).toBe(1);
+  });
+});
+
+describe("getRedisClient", () => {
+  beforeEach(() => {
+    jest.resetModules();
+
+    process.env.UPSTASH_REDIS_REST_URL = "test-url";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+  });
+
+  it("should return the same instance (singleton)", () => {
+    const { getRedisClient } = require("../../services/redisService");
+
+    const client1: RedisClient = getRedisClient();
+    const client2: RedisClient = getRedisClient();
 
     expect(client1).toBe(client2);
-    expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
+  });
+
+  it("should make a call to create instance only once", () => {
+    const { getRedisClient } = require("../../services/redisService");
+    const { Redis } = require("@upstash/redis");
+
+    getRedisClient();
+    getRedisClient();
+
+    expect(Redis).toHaveBeenCalledTimes(1);
   });
 });
