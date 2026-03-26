@@ -1,97 +1,145 @@
-import { Channel } from "stream-chat";
+const mockChannel = {
+  create: jest.fn(),
+  sendMessage: jest.fn(),
+};
 
-const mockQueryUsers = jest.fn();
-const mockUpsertUser = jest.fn();
-const mockCreateToken = jest.fn();
-const mockChannelFactory = jest.fn();
-const mockSendMessage = jest.fn();
-const mockChannelCreate = jest.fn();
+const mockClient = {
+  queryUsers: jest.fn(),
+  upsertUser: jest.fn(),
+  channel: jest.fn(() => mockChannel),
+};
 
-jest.mock("stream-chat", () => {
-  return {
-    StreamChat: {
-      getInstance: jest.fn(() => ({
-        queryUsers: mockQueryUsers,
-        upsertUser: mockUpsertUser,
-        createToken: mockCreateToken,
-        channel: mockChannelFactory,
-      })),
-    },
-  };
-});
+const mockGetInstance = jest.fn(() => mockClient);
 
-import {
-  checkRegisteredStreamUser,
-  createStreamUser,
-  generateStreamUserToken,
-  createAiChatChannel,
-  sendMessageToAi,
-} from "../../services/streamChatService";
+jest.mock("stream-chat", () => ({
+  StreamChat: {
+    getInstance: mockGetInstance,
+  },
+}));
 
-describe("streamChatService", () => {
+import { StreamChatService } from "../../services/streamChatService";
+import { APIResponse, Channel, SendMessageAPIResponse, StreamChat, UserResponse } from "stream-chat";
+import { StreamUser } from "../../utils/interfaces";
+
+describe("StreamChatService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    process.env.STREAM_API_KEY = "key";
+    process.env.STREAM_API_SECRET = "secret";
+
+    mockGetInstance.mockReturnValue(mockClient);
   });
 
-    it("calls queryUsers with $eq filter and returns the user", async () => {
-        const mockResponse = { users: [{ id: "u1" }] };
-        mockQueryUsers.mockResolvedValueOnce(mockResponse);
+  // -----------------------------
+  // constructor
+  // -----------------------------
+  it("should throw an error if env variables are missing during initialization", () => {
+    jest.resetModules();
 
-        const res = await checkRegisteredStreamUser("u1");
+    delete process.env.STREAM_API_KEY;
+    delete process.env.STREAM_API_SECRET;
 
-        expect(mockQueryUsers).toHaveBeenCalledWith({ id: { $eq: "u1" } });
-        expect(res).toBe(mockResponse);
+    expect(() => require("../../services/streamChatService")).toThrow(
+      "Stream API credentials are not defined",
+    );
+  });
+
+  // -----------------------------
+  // getStreamUser
+  // -----------------------------
+  it("should query StreamChat users with provided params", async () => {
+    mockClient.queryUsers.mockResolvedValue({ users: [] });
+
+    const streamUser: APIResponse & {
+      users: UserResponse[];
+    } = await StreamChatService.getStreamUser("123");
+
+    expect(mockClient.queryUsers).toHaveBeenCalledWith({
+      id: { $eq: "123" },
     });
 
-    it("calls upsertUser with provided user object and creates the user", async () => {
-      const user = { id: "u1", name: "Name", role: "user" };
-      const mockResp = { users: [user] };
-      mockUpsertUser.mockResolvedValueOnce(mockResp);
+    expect(streamUser).toEqual({ users: [] });
+  });
 
-      const res = await createStreamUser(user as any);
+  // -----------------------------
+  // upsertStreamUser
+  // -----------------------------
+  it("should create user in StreamChat", async () => {
+    const user: StreamUser = {
+      id: "123",
+      email: "test@mail.com",
+      name: "John Doe"
+    };
 
-      expect(mockUpsertUser).toHaveBeenCalledWith(user);
-      expect(res).toBe(mockResp);
-    });
+    mockClient.upsertUser.mockResolvedValue({ users: {} });
 
-    it("returns StreamChat token for requested user", () => {
-      mockCreateToken.mockReturnValueOnce("token-123");
-
-      const token = generateStreamUserToken("u1");
-
-      expect(mockCreateToken).toHaveBeenCalledWith("u1");
-      expect(token).toBe("token-123");
-    });
-
-    it("creates StreamChat channel, calls create() and returns channel object", async () => {
-      const fakeChannelObj = {
-        create: mockChannelCreate,
+    const newStreamUser: {
+      users: {
+        [key: string]: UserResponse;
       };
-      mockChannelFactory.mockReturnValueOnce(fakeChannelObj);
-      mockChannelCreate.mockResolvedValueOnce({ id: "chan1" });
+    } = await StreamChatService.upsertStreamUser(user);
 
-      const channel = await createAiChatChannel("u1");
+    expect(mockClient.upsertUser).toHaveBeenCalledWith(user);
+    expect(newStreamUser).toEqual({ users: {} });
+  });
 
-      expect(mockChannelFactory).toHaveBeenCalledWith("messaging", "chat-u1", {
-        created_by_id: "ai_bot",
-      });
-      expect(mockChannelCreate).toHaveBeenCalled();
-      expect(channel).toBe(fakeChannelObj);
+  // -----------------------------
+  // getOrCreateChatChannel
+  // -----------------------------
+  it("should successfully create StreamChat channel", async () => {
+    mockChannel.create.mockResolvedValue({});
+
+    const channel: Channel = await StreamChatService.getOrCreateChatChannel("123");
+
+    expect(mockClient.channel).toHaveBeenCalledWith("messaging", "chat-123", {
+      members: ["123"],
+      created_by_id: "ai_bot",
     });
 
-    it("calls sendMessage with ai_bot user and given text", async () => {
-      const channelInstance = {
-        sendMessage: mockSendMessage,
-      } as unknown as Channel;
+    expect(mockChannel.create).toHaveBeenCalled();
+    expect(channel).toBe(mockChannel);
+  });
 
-      mockSendMessage.mockResolvedValueOnce({});
+  it("should ignore error if channel already exists", async () => {
+    mockChannel.create.mockRejectedValue(new Error("exists"));
 
-      const res = await sendMessageToAi(channelInstance, "hello");
+    const channel: Channel = await StreamChatService.getOrCreateChatChannel("123");
 
-      expect(mockSendMessage).toHaveBeenCalledWith({
-        text: "hello",
-        user_id: "ai_bot",
-      });
-      expect(res).toBeDefined();
+    expect(mockChannel.create).toHaveBeenCalled();
+    expect(channel).toBe(mockChannel);
+  });
+
+  // -----------------------------
+  // sendMessageToAi
+  // -----------------------------
+  it("should send a message to user channel", async () => {
+    mockChannel.create.mockResolvedValue({});
+    mockChannel.sendMessage.mockResolvedValue({ success: true });
+
+    const message: SendMessageAPIResponse =
+      await StreamChatService.sendMessageToAi("123", "Hello AI");
+
+    expect(mockChannel.sendMessage).toHaveBeenCalledWith({
+      text: "Hello AI",
+      user_id: "ai_bot",
     });
+
+    expect(message).toEqual({ success: true });
+  });
+
+  it("should throw an error if message is invalid", async () => {
+    await expect(StreamChatService.sendMessageToAi("123", "")).rejects.toThrow(
+      "AI bot error",
+    );
+  });
+
+  // -----------------------------
+  // _getClient
+  // -----------------------------
+  it("should return underlying client", () => {
+    const client: StreamChat = StreamChatService._getClient();
+
+    expect(client).toBeDefined();
+  });
 });
