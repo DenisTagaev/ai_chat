@@ -58,7 +58,7 @@ describe("AuthService", () => {
   // -----------------------------
   // validation error
   // -----------------------------
-  it("should return validation_error on invalid data", async () => {
+  it("should return validation_error case to mapper on invalid data", async () => {
     (validateAndNormalizeData as jest.Mock).mockReturnValue({
       error: "Invalid email",
     });
@@ -74,7 +74,7 @@ describe("AuthService", () => {
   // -----------------------------
   // cooldown
   // -----------------------------
-  it("should set cooldown if recent attempt exceeds the limit", async () => {
+  it("should return cooldown case to mapper if recent attempt exceeds the limit", async () => {
     (validateAndNormalizeData as jest.Mock).mockReturnValue({
       email: normalizedEmail,
     });
@@ -99,9 +99,7 @@ describe("AuthService", () => {
     });
 
     (generateUserId as jest.Mock).mockReturnValue(userId);
-
-    // mockRedis.get.mockResolvedValue(null);
-    // mockRedis.set.mockResolvedValue(null);
+    mockRedis.get.mockResolvedValue(null);
 
     (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
       "fully_registered",
@@ -128,7 +126,7 @@ describe("AuthService", () => {
   // -----------------------------
   // already_registered
   // -----------------------------
-  it("should return already_registered case if user exists only in stream or db", async () => {
+  it("should return already_registered case to mapper if user exists only in stream or db", async () => {
     (validateAndNormalizeData as jest.Mock).mockReturnValue({
       email: normalizedEmail,
     });
