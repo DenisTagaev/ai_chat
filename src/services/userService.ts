@@ -18,8 +18,8 @@ export class UserService {
       users: UserResponse[];
     } = await StreamChatService.getStreamUser(userId);
 
-    if(existingNeonUser && existingStreamUser) return "registered";
-    if (!existingNeonUser || !existingStreamUser) return "unregistered";
+    if(existingNeonUser.length > 0 && existingStreamUser.users?.length > 0) return "registered";
+    if (existingNeonUser.length <= 0 && existingStreamUser.users.length <= 0) return "unregistered";
 
     return "inconsistent_registration";
   }
