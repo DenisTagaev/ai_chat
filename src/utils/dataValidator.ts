@@ -24,7 +24,7 @@ export function validateAndNormalizeData(
     return { error: "Invalid characters in name." };
   }
 
-  if (!validator.matches(normalizedName, /^[a-zA-ZÀ-ÿ\s.'-]+$/u)) {
+  if (!validator.matches(normalizedName, /^[a-zA-ZÀ-ÿ0-9\s.'-]+$/u)) {
     return { error: "Name contains unsupported characters." };
   }
 
