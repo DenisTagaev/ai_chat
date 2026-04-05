@@ -1,6 +1,9 @@
 import "./loadEnv";
 import express from "express";
 import cors from "cors";
+import pinoHttp from "pino-http";
+
+import { logger } from "./utils/logger";
 
 import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
@@ -13,5 +16,18 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/users", userRoutes);
 app.use("/api/ai", chatRoutes);
+
+app.use(
+  pinoHttp({
+    logger,
+    customLogLevel: (res, err) => {
+      const statusCode = res.statusCode ?? 200;
+
+      if (statusCode >= 500 || err) return "error";
+      if (statusCode >= 400) return "warn";
+      return "info";
+    },
+  }),
+);
 
 export default app;
