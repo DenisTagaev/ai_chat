@@ -20,8 +20,8 @@ app.use("/api/ai", chatRoutes);
 app.use(
   pinoHttp({
     logger,
-    customLogLevel: (res, err) => {
-      const statusCode = res.statusCode ?? 200;
+    customLogLevel: (res, err): "error" | "warn" | "info" => {
+      const statusCode: number = res.statusCode ?? 200;
 
       if (statusCode >= 500 || err) return "error";
       if (statusCode >= 400) return "warn";

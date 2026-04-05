@@ -3,18 +3,20 @@ import { ChatService } from "../services/chatService";
 import { ChatResponse } from "../utils/types";
 import { ChatResultMapper } from "../middleware/chatResultMapper";
 import { ChatHistoryService } from "../services/chatHistoryService";
+import { logger } from "../utils/logger";
 
 // ------------------------------------------
 // POST /ai-chat
 // ------------------------------------------
 export async function handleAiChat(req: Request, res: Response): Promise<any> {
+  const { message, userId } = req.body;
+
   try {
-    const { message, userId } = req.body;
     const chatResponse: ChatResponse = await ChatService.interactWithChat(message, userId);
 
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: any) {
-    console.error("AI Chat Error:", err);
+    logger.error({ userId, err }, "AI Chat Error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -26,9 +28,9 @@ export async function getUserChatHistory(
   req: Request,
   res: Response
 ): Promise<any> {
-  try {
-    const { userId } = req.body;
+  const { userId } = req.body;
 
+  try {
     if (!userId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -39,7 +41,7 @@ export async function getUserChatHistory(
 
     return res.status(200).json({ history });
   } catch (err: any) {
-    console.error("Chat History Error:", err);
+    logger.error({ userId, err }, "Chat History Error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

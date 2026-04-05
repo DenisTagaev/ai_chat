@@ -9,7 +9,7 @@ function getLogEnv(): string {
     return "info";
 }
 
-export const logger = pino({
+export const logger: pino.Logger<never, boolean> = pino({
   level: getLogEnv(),
   transport: isDevEnv
     ? {
