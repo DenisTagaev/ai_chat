@@ -7,6 +7,7 @@ import { validateAndNormalizeData } from "../utils/dataValidator";
 import { AuthResult } from "../utils/types";
 import { ChatHistoryService } from "./chatHistoryService";
 import { UserService } from "./userService";
+import { logger } from "../utils/logger";
 
 const redis = getRedisClient();
 
@@ -22,6 +23,7 @@ export class AuthService {
       | {
           error: string;
         } = validateAndNormalizeData(name, email);
+    logger.debug({ email }, "Validating auth request");
 
     if("error" in validatedData) {
       return { type: "validation_error", error: validatedData.error }
@@ -42,6 +44,7 @@ export class AuthService {
     const recentAttempt: Record<string, any> | null = await redis.get(cooldownKey);
 
     if (recentAttempt) {
+      logger.warn({ email }, "Auth cooldown triggered");
       return { type: "cooldown" };
     }
 
@@ -52,9 +55,11 @@ export class AuthService {
 
     switch (state) {
       case "fully_registered":
+        logger.info({ userId}, "User logged in");
         return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
 
       case "inconsistent_registration":
+        logger.warn({ userId}, "User registration conflict");
         return { type: "already_registered" };
 
       case "not_registered":
@@ -65,8 +70,9 @@ export class AuthService {
     await StreamChatService.upsertStreamUser(user);
     await createNeonUser(userId, name, normalizedEmail);
     await StreamChatService.getOrCreateChatChannel(userId);
-
     await redis.set(`user:${normalizedEmail}`, user, { ex: 3600 });
+
+    logger.info({ email }, "New user registered");
 
     return {
       type: "registered",
