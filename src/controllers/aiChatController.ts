@@ -3,7 +3,6 @@ import { ChatService } from "../services/chatService";
 import { ChatResponse } from "../utils/types";
 import { ChatResultMapper } from "../middleware/chatResultMapper";
 import { ChatHistoryService } from "../services/chatHistoryService";
-import { logger } from "../utils/logger";
 
 // ------------------------------------------
 // POST /ai-chat
@@ -16,7 +15,7 @@ export async function handleAiChat(req: Request, res: Response): Promise<any> {
 
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: any) {
-    logger.error({ userId, err }, "AI Chat Error:");
+    req.log.error({ err }, "AI Chat Error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -41,7 +40,7 @@ export async function getUserChatHistory(
 
     return res.status(200).json({ history });
   } catch (err: any) {
-    logger.error({ userId, err }, "Chat History Error:");
+    req.log.error({ err }, "Chat History Error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
