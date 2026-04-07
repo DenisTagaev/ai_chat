@@ -1,4 +1,5 @@
 import { Redis, SetCommandOptions } from "@upstash/redis";
+import { logger } from "../utils/logger";
 export class RedisClient{
   private readonly client: Redis;
 
@@ -20,7 +21,12 @@ export class RedisClient{
   }
 
   async get<T>(key: string): Promise<T | null> {
-    return this.client.get<T>(key);
+    try {
+      return await this.client.get<T>(key);
+    } catch (err) {
+      logger.error({ key, err }, "Redis GET fail");
+      throw err;
+    }
   }
 
   async set(
@@ -28,11 +34,21 @@ export class RedisClient{
     value: { [x: string]: any },
     options? : SetCommandOptions
   ): Promise<unknown> {
-    return this.client.set(key, value, options)
+    try {
+      return await this.client.set(key, value, options)
+    } catch (err) {
+      logger.error({ key, err }, "Redis SET fail");
+      throw err;
+    }
   };
 
   async del(key: string): Promise<number> {
-    return this.client.del(key);
+    try {
+      return await this.client.del(key);
+    } catch (err) {
+      logger.error({ key, err }, "Redis DEL failed");
+      throw err;
+    }
   }
 
   public _getClient(): Redis {

@@ -1,5 +1,6 @@
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { GeminiFormattedText, GeminiMessage } from "../utils/interfaces";
+import { logger } from "../utils/logger";
 
 export class GeminiAiClient {
   private readonly geminiAiClient: GoogleGenAI;
@@ -26,6 +27,7 @@ export class GeminiAiClient {
     history: GeminiMessage[] = [],
   ): Promise<string> {
     if (!userMessage?.trim()) {
+      logger.warn("Empty message sent to AI");
       throw new Error("User message is empty");
     }
 
@@ -37,22 +39,29 @@ export class GeminiAiClient {
       },
     ];
 
-    const response: GenerateContentResponse = await this.geminiAiClient.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-    });
+    try {
+      const response: GenerateContentResponse = await this.geminiAiClient.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents,
+      });
 
-    // Safe extraction
-    const text: string =
-      response?.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text ?? "")
-        .join("") ?? "";
+      // Safe extraction
+      const text: string =
+        response?.candidates?.[0]?.content?.parts
+          ?.map((p) => p.text ?? "")
+          .join("") ?? "";
 
-    if (!text) {
-      throw new Error("Empty response from Gemini");
+      if (!text) {
+        logger.error("Gemini returned empty response");
+        throw new Error("Empty response from Gemini");
+      }
+
+      return text;
+    } catch (err) {
+      logger.error({ err }, "Gemini API call failed");
+      throw err;
     }
 
-    return text;
   }
 
   public _getClient(): GoogleGenAI {
