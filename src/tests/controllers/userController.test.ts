@@ -6,7 +6,7 @@ import { AuthResultMapper } from "../../middleware/authResultMapper";
 jest.mock("../../services/authService");
 jest.mock("../../middleware/authResultMapper");
 
-describe("Auth Controller", () => {
+describe("User Controller", () => {
   const validBody = {
     name: "Denis",
     email: "denis@test.com",
