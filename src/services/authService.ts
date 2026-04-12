@@ -23,7 +23,7 @@ export class AuthService {
       | {
           error: string;
         } = validateAndNormalizeData(name, email);
-    logger.debug({ email }, "Validating auth request");
+    logger.debug({ email }, "auth.validate.start");
 
     if("error" in validatedData) {
       return { type: "validation_error", error: validatedData.error }
@@ -44,7 +44,7 @@ export class AuthService {
     const recentAttempt: Record<string, any> | null = await redis.get(cooldownKey);
 
     if (recentAttempt) {
-      logger.warn({ email }, "Auth cooldown triggered");
+      logger.warn({ email }, "auth.cooldown.active");
       return { type: "cooldown" };
     }
 
@@ -55,11 +55,11 @@ export class AuthService {
 
     switch (state) {
       case "fully_registered":
-        logger.info({ userId}, "User logged in");
+        logger.info("auth.login.success");
         return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
 
       case "inconsistent_registration":
-        logger.warn({ userId}, "User registration conflict");
+        logger.warn("auth.registration.conflict");
         return { type: "already_registered" };
 
       case "not_registered":
@@ -72,7 +72,7 @@ export class AuthService {
     await StreamChatService.getOrCreateChatChannel(userId);
     await redis.set(`user:${normalizedEmail}`, user, { ex: 3600 });
 
-    logger.info({ email }, "New user registered");
+    logger.info("auth.register.success");
 
     return {
       type: "registered",
