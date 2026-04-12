@@ -4,6 +4,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 
 import { logger } from "./utils/logger";
+import { asyncLocalStorage } from "./utils/requestContext";
 import { attachLogger } from "./middleware/loggerMiddleware";
 
 import userRoutes from "./routes/userRoutes";
@@ -15,6 +16,16 @@ const isTestEnv: boolean = process.env.NODE_ENV === "test";
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use((req, _res, next) => {
+  const reqId: string = req.headers["x-request-id"]?.toString() || crypto.randomUUID();
+
+  const userId: string | null = req.body?.userId || null;
+
+  asyncLocalStorage.run({ reqId, userId }, () => {
+    next();
+  });
+});
 
 if (isTestEnv) {
   app.use(attachLogger);

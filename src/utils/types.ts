@@ -20,3 +20,8 @@ export type UserRegistrationState =
   | "registered"
   | "unregistered"
   | "inconsistent_registration";
+
+  export type RequestContext = {
+    reqId: string;
+    userId?: string | null;
+  };
