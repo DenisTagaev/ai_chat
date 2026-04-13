@@ -22,7 +22,7 @@ export class StreamChatService {
     try {
       return await this.streamClient.queryUsers({ id: { $eq: id } });
     } catch (err) {
-      logger.error({ id, err }, "Stream user querying fail");
+      logger.error({ id, err }, "stream.user_query.fail");
       throw err;
     }
   }
@@ -34,7 +34,7 @@ export class StreamChatService {
     try {
       return await this.streamClient.upsertUser(user as UserResponse);
     } catch (err) {
-      logger.error({ userId: user.id, err }, "Stream user upsert fail");
+      logger.error({ userId: user.id, err }, "stream.user_upsert.fail");
       throw err;
     }
   }
@@ -46,7 +46,7 @@ export class StreamChatService {
     try{
       await channel.create()
     } catch{
-      logger.debug({ userId }, "Channel already exists");
+      logger.debug("stream.channel.already_exists");
     }
 
     return channel;
@@ -68,7 +68,7 @@ export class StreamChatService {
     message: string,
   ): Promise<SendMessageAPIResponse> {
     if (typeof message !== "string" || !message.trim()) {
-      logger.warn({ userId }, "Unreadable message attempt");
+      logger.warn("stream.message.unreadable");
       throw new Error("AI bot error");
     }
 
@@ -79,7 +79,7 @@ export class StreamChatService {
         user_id: this.ai_user,
       });
     } catch (err) {
-      logger.error({ userId, err }, "Sending message to Stream failed");
+      logger.error({ err }, "stream.message_send.fail");
       throw err;
     }
 
