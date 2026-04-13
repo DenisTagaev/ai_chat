@@ -21,7 +21,7 @@ export class ChatService {
       await UserService.getUserRegisterState(userId);
 
     if(registrationState === "inconsistent_registration") {
-      logger.debug({ userId }, "Missing user chat");
+      logger.debug("chat.registration.inconsistent");
       return { type: "user_not_found"}
     }
 
@@ -34,20 +34,20 @@ export class ChatService {
       { role: "model", content: String(chunk.reply) },
     ]);
 
-    logger.debug({ userId, message }, "Generating AI response");
+    logger.debug({ message }, "chat.message.generation_start");
     const fullReply: string = await geminiAiService.generateResponse(
       message,
       formattedHistory,
     );
-    logger.info({ userId }, "Generated AI response");
+    logger.info("chat.ai_response.generated");
 
     // ---- send to stream ---- //
     await StreamChatService.sendMessageToAi(userId, fullReply);
-    logger.debug({ userId }, "Sending message to Stream");
+    logger.debug("chat.stream.message_sent");
 
     // ---- persist ---- //
     await saveStreamChatMessageToDB(userId, message, fullReply);
-    logger.debug({ userId }, "Saving message to DB");
+    logger.debug("chat.db.message_saved");
 
     // --- clear cache --- //
     await ChatHistoryService.addMessageToHistory(userId, message, fullReply);
