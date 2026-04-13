@@ -27,7 +27,7 @@ export class GeminiAiClient {
     history: GeminiMessage[] = [],
   ): Promise<string> {
     if (!userMessage?.trim()) {
-      logger.warn("Empty message sent to AI");
+      logger.warn("gemini.validation.empty_message");
       throw new Error("User message is empty");
     }
 
@@ -52,13 +52,13 @@ export class GeminiAiClient {
           .join("") ?? "";
 
       if (!text) {
-        logger.error("Gemini returned empty response");
+        logger.error("gemini.response.empty");
         throw new Error("Empty response from Gemini");
       }
 
       return text;
     } catch (err) {
-      logger.error({ err }, "Gemini API call failed");
+      logger.error({ err }, "gemini.api.call_failed");
       throw err;
     }
 
