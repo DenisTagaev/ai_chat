@@ -20,19 +20,19 @@ export class UserService {
       } = await StreamChatService.getStreamUser(userId);
 
       if(existingNeonUser.length > 0 && existingStreamUser.users?.length > 0) {
-        logger.info({ userId }, "User registered");
+        logger.info("user.status.registered");
         return "registered";
       }
 
       if (existingNeonUser.length <= 0 && existingStreamUser.users?.length <= 0) {
-        logger.info({ userId }, "User not found");
+        logger.info("user.status.unregistered");
         return "unregistered";
       }
 
-      logger.warn({ userId }, "Inconsistent registration between Stream and DB");
+      logger.warn("user.status.inconsistent_registration");
       return "inconsistent_registration";
     } catch (err) {
-      logger.error({ userId, err }, "UserService fail");
+      logger.error({ err }, "user.service.fail");
       throw err;
     }
   }
