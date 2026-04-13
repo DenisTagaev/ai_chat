@@ -24,7 +24,7 @@ export class RedisClient{
     try {
       return await this.client.get<T>(key);
     } catch (err) {
-      logger.error({ key, err }, "Redis GET fail");
+      logger.error({ key, err }, "redis.get.fail");
       throw err;
     }
   }
@@ -37,7 +37,7 @@ export class RedisClient{
     try {
       return await this.client.set(key, value, options)
     } catch (err) {
-      logger.error({ key, err }, "Redis SET fail");
+      logger.error({ key, err }, "redis.set.fail");
       throw err;
     }
   };
@@ -46,7 +46,7 @@ export class RedisClient{
     try {
       return await this.client.del(key);
     } catch (err) {
-      logger.error({ key, err }, "Redis DEL failed");
+      logger.error({ key, err }, "redis.del.fail");
       throw err;
     }
   }
