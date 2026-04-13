@@ -19,17 +19,17 @@ export class ChatHistoryService {
       | null = await redis.get<ChatSelect[]>(cacheKey);
 
     if (cachedData && Array.isArray(cachedData)) {
-      logger.info({ userId }, "Chat history cache hit");
+      logger.info("chat_history.cache.hit");
       return cachedData;
     }
 
     const chatHistory: {
       [x: string]: any;
     }[] = await getStreamChatHistoryFromDB(userId);
-    logger.info({ userId }, "Chat history cache absent, querying DB");
+    logger.info("chat_history.cache.miss");
 
     if (chatHistory.length > 0) {
-      logger.info({ userId }, "Chat history cache set");
+      logger.info("chat_history.cache.set");
       await redis.set(cacheKey, chatHistory, { ex: 600 });
     }
 
@@ -50,7 +50,7 @@ export class ChatHistoryService {
       | null = await redis.get<ChatSelect[]>(cacheKey);
 
     if(cachedData && Array.isArray(cachedData)){
-      logger.info({ userId }, "Chat history cache update");
+      logger.info("chat_history.cache.update");
       cachedData.push({
         message,
         reply
@@ -61,7 +61,7 @@ export class ChatHistoryService {
   }
 
   static async invalidateHistory(userId: string): Promise<void> {
-    logger.info({ userId }, "Chat history cache cleared");
+    logger.info("chat_history.cache.invalidate");
     await redis.del(this.getCacheKey(userId));
   }
 }
