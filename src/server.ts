@@ -38,12 +38,6 @@ if (isTestEnv) {
         return req.headers["x-request-id"] || crypto.randomUUID();
       },
 
-      customProps: (req) => {
-        return {
-          userId: req.body?.userId || null,
-        }
-      },
-
       customLogLevel: (res, err): "error" | "warn" | "info" => {
         if (err) return "error";
 

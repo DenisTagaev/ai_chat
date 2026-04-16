@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@logtail/pino": "^0.5.8",
     "@neondatabase/serverless": "^1.0.2",
     "@upstash/redis": "^1.35.6",
     "compression": "^1.8.1",
@@ -25,7 +26,6 @@
     "express-rate-limit": "^8.2.1",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
-    "pino-loki": "^3.0.0",
     "redis": "^5.9.0",
     "stream-chat": "^9.25.0",
     "validator": "^13.15.20",

@@ -47,26 +47,21 @@ export const logger: pino.Logger<never, boolean> = pino({
       }
     : {}),
 
-  transport: isProdEnv
+  ...(isProdEnv
     ? {
-        target: "pino-loki",
-        options: {
-          host: process.env.LOKI_HOST,
-          basicAuth: {
-            username: process.env.LOKI_USER,
-            password: process.env.LOKI_API_KEY,
-          },
-
-          labels: {
-            app: "my-backend",
-            env: process.env.NODE_ENV,
-          },
-
-          batching: true,
-          interval: 5,
+        transport: {
+          target: "@logtail/pino",
+          options: {
+            sourceToken: process.env.LOGTAIL_SOURCE_TOKEN,
+            options: {
+              endpoint: process.env.LOGTAIL_ENDPOINT,
+            }
+          }
         },
       }
     : {
+      transport: {
         target: "pino-pretty",
       },
+    }),
 });
