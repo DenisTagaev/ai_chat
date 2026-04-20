@@ -4,17 +4,18 @@ import { Request, Response, NextFunction } from "express";
 export const validate =
   (schema: ZodMiniObject) =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.safeParse({
-        body: req.body,
-        params: req.params,
-        query: req.query,
-      });
-      next();
-    } catch (error: any) {
+    const result = schema.safeParse({
+      body: req.body,
+      params: req.params,
+      query: req.query,
+    });
+
+    if (!result.success) {
       return res.status(400).json({
         error: "Invalid request data",
-        details: error.errors,
+        details: result.error,
       });
     }
+
+    next();
   };
