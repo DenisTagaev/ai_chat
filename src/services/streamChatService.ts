@@ -1,6 +1,8 @@
 import { StreamChat, APIResponse, UserResponse, Channel, SendMessageAPIResponse } from "stream-chat";
 import { StreamUser } from "../utils/interfaces";
 import { logger } from "../utils/logger";
+import { withTimeout } from "../utils/timeout";
+import { TimeoutError } from "redis";
 
 export class StreamChatService {
   private static readonly ai_user = "ai_bot";
@@ -20,9 +22,17 @@ export class StreamChatService {
     id: string,
   ): Promise<APIResponse & { users: UserResponse[] }> {
     try {
-      return await this.streamClient.queryUsers({ id: { $eq: id } });
+      return await withTimeout(
+        this.streamClient.queryUsers({ id: { $eq: id } }),
+        5000,
+        "Stream user query"
+      );
     } catch (err) {
-      logger.error({ id, err }, "stream.user_query.fail");
+      if(err instanceof TimeoutError) {
+        logger.warn({ id }, "stream.user_query.timeout");
+      } else {
+        logger.error({ id, err }, "stream.user_query.fail");
+      }
       throw err;
     }
   }
@@ -32,9 +42,17 @@ export class StreamChatService {
     user: StreamUser,
   ): Promise<APIResponse & { users: { [key: string]: UserResponse } }> {
     try {
-      return await this.streamClient.upsertUser(user as UserResponse);
+      return await withTimeout(
+        this.streamClient.upsertUser(user as UserResponse),
+        3000,
+        "Stream user upsert"
+      );
     } catch (err) {
-      logger.error({ userId: user.id, err }, "stream.user_upsert.fail");
+      if(err instanceof TimeoutError) {
+        logger.warn({ userId: user.id }, "stream.user_upsert.timeout");
+      } else {
+        logger.error({ userId: user.id, err }, "stream.user_upsert.fail");
+      }
       throw err;
     }
   }
@@ -44,9 +62,18 @@ export class StreamChatService {
     const channel: Channel = this.setAiChannel(userId);
 
     try{
-      await channel.create()
-    } catch{
-      logger.debug("stream.channel.already_exists");
+      await withTimeout(
+        channel.create(),
+        3000,
+        "Stream channel create"
+      );
+    } catch (err) {
+      if (err instanceof TimeoutError) {
+        logger.warn({ userId }, "stream.channel.create.timeout");
+      } else {
+        logger.debug({ userId, err }, "stream.channel.already_exists");
+      }
+      throw err;
     }
 
     return channel;
@@ -74,12 +101,20 @@ export class StreamChatService {
 
     try {
       const channel: Channel = await this.getOrCreateChatChannel(userId);
-      return channel.sendMessage({
-        text: message,
-        user_id: this.ai_user,
-      });
+      return await withTimeout(
+        channel.sendMessage({
+          text: message,
+          user_id: this.ai_user,
+        }),
+        5000,
+        "Stream message send"
+      );
     } catch (err) {
-      logger.error({ err }, "stream.message_send.fail");
+      if (err instanceof TimeoutError) {
+        logger.warn({ userId }, "stream.message_send.timeout");
+      } else {
+        logger.error({ userId, err }, "stream.message_send.fail");
+      }
       throw err;
     }
 
