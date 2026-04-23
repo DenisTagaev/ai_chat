@@ -1,6 +1,7 @@
 import { GenerateContentResponse, GoogleGenAI } from "@google/genai";
 import { GeminiFormattedText, GeminiMessage } from "../utils/interfaces";
 import { logger } from "../utils/logger";
+import { TimeoutError, withTimeout } from "../utils/timeout";
 
 export class GeminiAiClient {
   private readonly geminiAiClient: GoogleGenAI;
@@ -40,10 +41,15 @@ export class GeminiAiClient {
     ];
 
     try {
-      const response: GenerateContentResponse = await this.geminiAiClient.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents,
-      });
+      const response: GenerateContentResponse = await 
+      withTimeout(
+        this.geminiAiClient.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents,
+        }),
+        10000,
+        "Gemini API call"
+      );
 
       // Safe extraction
       const text: string =
@@ -58,7 +64,11 @@ export class GeminiAiClient {
 
       return text;
     } catch (err) {
-      logger.error({ err }, "gemini.api.call_failed");
+      if (err instanceof TimeoutError) {
+        logger.warn({ userMessage }, "gemini.api.timeout");
+      } else {
+        logger.error({ err }, "gemini.api.call_failed");
+      }
       throw err;
     }
 
