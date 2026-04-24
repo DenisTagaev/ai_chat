@@ -1,5 +1,6 @@
 import { Redis, SetCommandOptions } from "@upstash/redis";
 import { logger } from "../utils/logger";
+import { TimeoutError, withTimeout } from "../utils/timeout";
 export class RedisClient{
   private readonly client: Redis;
 
@@ -22,9 +23,17 @@ export class RedisClient{
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      return await this.client.get<T>(key);
+      return await withTimeout(
+        this.client.get<T>(key),
+        5000,
+        "Redis GET call"
+      );
     } catch (err) {
-      logger.error({ key, err }, "redis.get.fail");
+      if (err instanceof TimeoutError) {
+        logger.warn({ key, err }, "redis.get.timeout");
+      } else {
+        logger.error({ key, err }, "redis.get.fail");
+      }
       throw err;
     }
   }
@@ -35,18 +44,34 @@ export class RedisClient{
     options? : SetCommandOptions
   ): Promise<unknown> {
     try {
-      return await this.client.set(key, value, options)
+      return await withTimeout(
+        this.client.set(key, value, options),
+        5000,
+        "Redis SET call"
+      );
     } catch (err) {
-      logger.error({ key, err }, "redis.set.fail");
-      throw err;
+      if (err instanceof TimeoutError) {
+        logger.warn({ key, err }, "redis.set.timeout");
+      } else {
+        logger.error({ key, err }, "redis.set.fail");
+        throw err;
+      }
     }
   };
 
   async del(key: string): Promise<number> {
     try {
-      return await this.client.del(key);
+      return await withTimeout(
+        this.client.del(key),
+        5000,
+        "Redis DEL call"
+      );
     } catch (err) {
-      logger.error({ key, err }, "redis.del.fail");
+      if (err instanceof TimeoutError) {
+        logger.warn({ key, err }, "redis.del.timeout");
+      } else {
+        logger.error({ key, err }, "redis.del.fail");
+      }
       throw err;
     }
   }
