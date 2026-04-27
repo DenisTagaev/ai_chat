@@ -25,19 +25,20 @@ export async function getNeonUserById(userId: string) {
 // --- CHATS ---
 export async function saveStreamChatMessageToDB(
   userId: string,
+  chatId: string,
   message: string,
   reply: string
 ) {
   return withTimeout(
-    db.insert(chats).values({ userId, message, reply }),
+    db.insert(chats).values({ userId, chatId, message, reply }),
     5000,
     "CHATS INSERT call"
   );
 }
 
-export async function getStreamChatHistoryFromDB(userId: string) {
+export async function getStreamChatHistoryFromDB(chatId: string) {
   return withTimeout(
-    db.select().from(chats).where(eq(chats.userId, userId)),
+    db.select().from(chats).where(eq(chats.chatId, chatId)),
     5000,
     "CHATS SELECT call"
   );
