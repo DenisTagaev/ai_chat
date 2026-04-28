@@ -1,6 +1,6 @@
 import { db } from "../config/db";
 import { withTimeout } from "../utils/timeout";
-import { users, chats } from "./schemas";
+import { users, chats, chatsSessions } from "./schemas";
 import { eq } from "drizzle-orm";
 
 
@@ -41,5 +41,23 @@ export async function getStreamChatHistoryFromDB(chatId: string) {
     db.select().from(chats).where(eq(chats.chatId, chatId)),
     5000,
     "CHATS SELECT call"
+  );
+}
+
+// --- CHAT SESSIONS ---
+
+export async function createChatSession(chatId: string, userId: string, title: string) {
+  return withTimeout(
+    db.insert(chatsSessions).values({ chatId, userId, title }),
+    5000,
+    "CHAT SESSIONS INSERT call"
+  );
+}
+
+export async function getChatSessionsByChatId(chatId: string) {
+  return withTimeout(
+    db.select().from(chatsSessions).where(eq(chatsSessions.chatId, chatId)),
+    5000,
+    "CHAT SESSIONS SELECT call"
   );
 }
