@@ -1,9 +1,7 @@
 import { db } from "../config/db";
 import { withTimeout } from "../utils/timeout";
 import { users, chats, chatsSessions } from "./schemas";
-import { eq } from "drizzle-orm";
-
-
+import { desc, eq, sql } from "drizzle-orm";
 
 // --- USERS ---
 export async function createNeonUser(id: string, name: string, email: string) {
@@ -63,7 +61,24 @@ export async function getChatSessionsByChatId(chatId: string) {
 
 export async function getChatSessionsByUserId(userId: string) {
   return withTimeout(
-    db.select().from(chatsSessions).where(eq(chatsSessions.userId, userId)),
+    db.select({
+      chatId: chatsSessions.chatId,
+      title: chatsSessions.title,
+      lastReply: chats.reply,
+      updatedAt: chats.updatedAt,
+    })
+    .from(chatsSessions)
+    .leftJoin(
+      chats,
+      sql`${chats.id} = (
+        SELECT c.id FROM ${chats} AS c
+        WHERE c.chat_id = ${chatsSessions.chatId}
+        ORDER BY c.created_at DESC
+        LIMIT 1
+      )`
+    )
+    .where(eq(chatsSessions.userId, userId))
+    .orderBy(desc(sql`COALESCE(${chatsSessions.updatedAt}, ${chats.updatedAt})`)),
     5000,
     "CHAT SESSIONS SELECT by userId call"
   );
