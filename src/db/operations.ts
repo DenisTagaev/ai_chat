@@ -58,6 +58,14 @@ export async function getChatSessionsByChatId(chatId: string) {
   return withTimeout(
     db.select().from(chatsSessions).where(eq(chatsSessions.chatId, chatId)),
     5000,
-    "CHAT SESSIONS SELECT call"
+    "CHAT SESSIONS SELECT by chatId call"
+  );
+}
+
+export async function getChatSessionsByUserId(userId: string) {
+  return withTimeout(
+    db.select().from(chatsSessions).where(eq(chatsSessions.userId, userId)),
+    5000,
+    "CHAT SESSIONS SELECT by userId call"
   );
 }
