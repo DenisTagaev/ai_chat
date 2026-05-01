@@ -24,13 +24,12 @@ export async function getNeonUserById(userId: string) {
 
 // --- CHATS ---
 export async function saveStreamChatMessageToDB(
-  userId: string,
   chatId: string,
   message: string,
   reply: string
 ) {
   return withTimeout(
-    db.insert(chats).values({ userId, chatId, message, reply }),
+    db.insert(chats).values({ chatId, message, reply }),
     5000,
     "CHATS INSERT call"
   );
