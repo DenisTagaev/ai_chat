@@ -14,7 +14,14 @@ export type AuthResult =
 export type ChatResponse =
   | { type: "validation_error" }
   | { type: "user_not_found" }
+  | { type: "internal_error" }
   | { type: "success"; reply: string };
+
+export type ChatSessionResponse =
+  | { type: "validation_error" }
+  | { type: "user_not_found" }
+  | { type: "internal_error" }
+  | { type: "success"; chatId: string };
 
 export type UserRegistrationState =
   | "registered"
