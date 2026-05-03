@@ -3,13 +3,16 @@ import { StreamChatService } from "./streamChatService";
 import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
 import { GeminiMessage } from "../utils/interfaces";
-import { ChatResponse } from "../utils/types";
+import { ChatResponse, ChatSessionResponse } from "../utils/types";
 import { UserService } from "./userService";
 import { logger } from "../utils/logger";
 import { generateChatId } from "../utils/idGenerator";
 export class ChatService {
   // ---- Create new chat with initial message ---- //
-  static async createChat(userId: string, firstMessage: string) {
+  static async createChat(
+    userId: string,
+    firstMessage: string
+  ): Promise<ChatSessionResponse> {
     if (!userId || !firstMessage.trim()) {
       return { type: "validation_error" };
     }
@@ -29,10 +32,19 @@ export class ChatService {
       await createChatSession(chatId, userId, "New Chat");
       await StreamChatService.getOrCreateChatChannel(userId, chatId);
 
-      const firstReply: string = await geminiAiService.generateResponse(firstMessage, []);
+      const firstReply: string = await geminiAiService.generateResponse(
+        firstMessage,
+        [],
+      );
       await StreamChatService.sendMessageToAi(userId, chatId, firstReply);
-
       await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
+
+      await ChatHistoryService.addMessageToHistory(
+        chatId,
+        firstMessage,
+        firstReply,
+      );
+
       logger.info({ userId, chatId }, "chat.session.created");
       return { type: "success", chatId };
     } catch (error) {
@@ -41,6 +53,7 @@ export class ChatService {
     }
   }
 
+  // ---- Send message to existing chat ---- //
   static async sendMessageToChatById(
     message: string,
     chatId: string,
@@ -59,38 +72,41 @@ export class ChatService {
       return { type: "user_not_found" };
     }
 
-    const chatHistory: {
-      [x: string]: any;
-    }[] = await ChatHistoryService.getHistory(chatId);
+    try {
+      const chatHistory: {
+        [x: string]: any;
+      }[] = await ChatHistoryService.getHistory(chatId);
 
-    const formattedHistory: GeminiMessage[] = chatHistory.flatMap((chunk) => [
-      { role: "user", content: String(chunk.message) },
-      { role: "model", content: String(chunk.reply) },
-    ]);
+      const formattedHistory: GeminiMessage[] = chatHistory.flatMap((chunk) => [
+        { role: "user", content: String(chunk.message) },
+        { role: "model", content: String(chunk.reply) },
+      ]);
 
-    logger.debug({ message }, "chat.message.generation_start");
-    const fullReply: string = await geminiAiService.generateResponse(
-      message,
-      formattedHistory,
-    );
-    logger.info("chat.ai_response.generated");
+      logger.debug({ chatId, message }, "chat.message.generation_start");
 
-    // ---- send to stream ---- //
-    await StreamChatService.sendMessageToAi(userId, chatId, fullReply);
-    logger.debug("chat.stream.message_sent");
+      // ---- generate AI response ---- //
+      const fullReply: string = await geminiAiService.generateResponse(
+        message,
+        formattedHistory,
+      );
 
-    // ---- persist ---- //
-    await saveStreamChatMessageToDB(userId, chatId, message, fullReply);
-    logger.debug("chat.db.message_saved");
+      logger.info({ chatId }, "chat.ai_response.generated");
 
-    // --- clear cache --- //
-    await ChatHistoryService.addMessageToHistory(
-      userId,
-      chatId,
-      message,
-      fullReply,
-    );
+      // ---- send to stream ---- //
+      await StreamChatService.sendChatToStream(userId, chatId, message, fullReply);
+      logger.debug({ chatId }, "chat.stream.message_sent");
 
-    return { type: "success", reply: fullReply };
+      // ---- persist ---- //
+      await saveStreamChatMessageToDB(chatId, message, fullReply);
+      logger.debug({ chatId }, "chat.db.message_saved");
+
+      // --- clear cache --- //
+      await ChatHistoryService.addMessageToHistory(chatId, message, fullReply);
+
+      return { type: "success", reply: fullReply };
+    } catch (error) {
+      logger.error({ chatId, error }, "chat.message.generation_failed");
+      return { type: "internal_error" };
+    }
   }
 }
