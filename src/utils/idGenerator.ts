@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 
 export default function generateUserId(email: string): string {
   const hash = crypto
@@ -7,4 +7,9 @@ export default function generateUserId(email: string): string {
     .digest("hex")
     .slice(0, 10);
   return `usr_${hash}`;
+}
+
+export function generateChatId(): string {
+  const randomPart: string = randomUUID();
+  return `chat_${randomPart}`;
 }
