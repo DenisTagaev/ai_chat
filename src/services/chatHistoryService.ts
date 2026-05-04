@@ -6,12 +6,12 @@ import { getRedisClient } from "./redisService";
 const redis = getRedisClient();
 
 export class ChatHistoryService {
-  private static getCacheKey(userId: string): string {
-    return `chat_history:${userId}`;
+  private static getCacheKey(chatId: string): string {
+    return `chat_history:${chatId}`;
   }
 
-  static async getHistory(userId: string): Promise<ChatSelect[]> {
-    const cacheKey: string = this.getCacheKey(userId);
+  static async getHistory(chatId: string): Promise<ChatSelect[]> {
+    const cacheKey: string = this.getCacheKey(chatId);
     const cachedData:
       | {
           [x: string]: any;
@@ -25,7 +25,7 @@ export class ChatHistoryService {
 
     const chatHistory: {
       [x: string]: any;
-    }[] = await getStreamChatHistoryFromDB(userId);
+    }[] = await getStreamChatHistoryFromDB(chatId);
     logger.info("chat_history.cache.miss");
 
     if (chatHistory.length > 0) {
@@ -37,11 +37,11 @@ export class ChatHistoryService {
   }
 
   static async addMessageToHistory(
-    userId: string,
+    chatId: string,
     message: string,
     reply: string,
   ): Promise<void> {
-    const cacheKey = this.getCacheKey(userId);
+    const cacheKey: string = this.getCacheKey(chatId);
 
     const cachedData:
       | {
@@ -52,16 +52,18 @@ export class ChatHistoryService {
     if(cachedData && Array.isArray(cachedData)){
       logger.info("chat_history.cache.update");
       cachedData.push({
+        chatId,
         message,
         reply
       } as ChatSelect);
+      logger.info({chatId}, "chat_history.cache.set");
 
       await redis.set(cacheKey, cachedData, {ex: 600 });
     }
   }
 
-  static async invalidateHistory(userId: string): Promise<void> {
-    logger.info("chat_history.cache.invalidate");
-    await redis.del(this.getCacheKey(userId));
+  static async invalidateHistory(chatId: string): Promise<void> {
+    logger.info({chatId}, "chat_history.cache.invalidate");
+    await redis.del(this.getCacheKey(chatId));
   }
 }
