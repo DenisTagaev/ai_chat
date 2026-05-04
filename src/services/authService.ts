@@ -69,7 +69,6 @@ export class AuthService {
     // ---- create new user ----
     await StreamChatService.upsertStreamUser(user);
     await createNeonUser(userId, name, normalizedEmail);
-    await StreamChatService.getOrCreateChatChannel(userId);
     await redis.set(`user:${normalizedEmail}`, user, { ex: 3600 });
 
     logger.info("auth.register.success");
