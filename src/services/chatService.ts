@@ -36,8 +36,10 @@ export class ChatService {
         firstMessage,
         [],
       );
-      await StreamChatService.sendMessageToAi(userId, chatId, firstReply);
-      await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
+      await StreamChatService.sendUserMessage(userId, chatId, firstMessage);
+      logger.debug({ chatId }, "chat.stream.message_sent");
+      await StreamChatService.sendAiMessage(chatId, firstReply);
+      logger.debug({ chatId }, "chat.stream.message_sent");
 
       await ChatHistoryService.addMessageToHistory(
         chatId,
@@ -93,7 +95,9 @@ export class ChatService {
       logger.info({ chatId }, "chat.ai_response.generated");
 
       // ---- send to stream ---- //
-      await StreamChatService.sendChatToStream(userId, chatId, message, fullReply);
+      await StreamChatService.sendUserMessage(userId, chatId, message);
+      logger.debug({ chatId }, "chat.stream.message_sent");
+      await StreamChatService.sendAiMessage(chatId, fullReply);
       logger.debug({ chatId }, "chat.stream.message_sent");
 
       // ---- persist ---- //

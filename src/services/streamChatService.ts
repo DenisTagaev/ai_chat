@@ -25,10 +25,10 @@ export class StreamChatService {
       return await withTimeout(
         this.streamClient.queryUsers({ id: { $eq: id } }),
         5000,
-        "Stream user query"
+        "Stream user query",
       );
     } catch (err) {
-      if(err instanceof TimeoutError) {
+      if (err instanceof TimeoutError) {
         logger.warn({ id }, "stream.user_query.timeout");
       } else {
         logger.error({ id, err }, "stream.user_query.fail");
@@ -45,10 +45,10 @@ export class StreamChatService {
       return await withTimeout(
         this.streamClient.upsertUser(user as UserResponse),
         3000,
-        "Stream user upsert"
+        "Stream user upsert",
       );
     } catch (err) {
-      if(err instanceof TimeoutError) {
+      if (err instanceof TimeoutError) {
         logger.warn({ userId: user.id }, "stream.user_upsert.timeout");
       } else {
         logger.error({ userId: user.id, err }, "stream.user_upsert.fail");
@@ -58,66 +58,78 @@ export class StreamChatService {
   }
 
   /** Create a messaging channel for a user */
-  static async getOrCreateChatChannel(userId: string): Promise<Channel> {
-    const channel: Channel = this.setAiChannel(userId);
+  static async getOrCreateChatChannel(
+    userId: string,
+    chatId: string,
+  ): Promise<Channel> {
+    const channel: Channel = this.setAiChannel(chatId, userId);
 
-    try{
-      await withTimeout(
-        channel.create(),
-        3000,
-        "Stream channel create"
-      );
+    try {
+      await withTimeout(channel.create(), 3000, "Stream channel create");
+      return channel;
     } catch (err) {
       if (err instanceof TimeoutError) {
-        logger.warn({ userId }, "stream.channel.create.timeout");
+        logger.warn({ chatId }, "stream.channel.create.timeout");
       } else {
-        logger.debug({ userId, err }, "stream.channel.already_exists");
+        logger.debug({ chatId, err }, "stream.channel.already_exists");
       }
       throw err;
     }
-
-    return channel;
   }
 
-  private static setAiChannel(userId: string): Channel {
-    return this.streamClient.channel(
-      "messaging",
-      `chat-${userId}`,
-    {
+  private static setAiChannel(chatId: string, userId: string): Channel {
+    return this.streamClient.channel("messaging", chatId, {
       members: [userId],
-      created_by_id: this.ai_user
+      created_by_id: this.ai_user,
     });
   }
 
   /** Send an AI message to the user's channel */
-  static async sendMessageToAi(
-    userId: string,
+  static async sendMessageToStream(
+    senderId: string,
+    chatId: string,
     message: string,
   ): Promise<SendMessageAPIResponse> {
     if (typeof message !== "string" || !message.trim()) {
-      logger.warn("stream.message.unreadable");
-      throw new Error("AI bot error");
+      if (senderId === this.ai_user) {
+        logger.warn("stream.ai.message_invalid");
+        throw new Error("AI Error");
+      } else {
+        logger.warn("stream.user.message_invalid");
+        throw new Error("Invalid user message");
+      }
     }
 
     try {
-      const channel: Channel = await this.getOrCreateChatChannel(userId);
+      const channel: Channel = await this.getOrCreateChatChannel(
+        senderId,
+        chatId,
+      );
+
       return await withTimeout(
         channel.sendMessage({
           text: message,
-          user_id: this.ai_user,
+          user_id: senderId,
         }),
         5000,
-        "Stream message send"
+        "Stream message send",
       );
     } catch (err) {
       if (err instanceof TimeoutError) {
-        logger.warn({ userId }, "stream.message_send.timeout");
+        logger.warn({ chatId, senderId }, "stream.message_send.timeout");
       } else {
-        logger.error({ userId, err }, "stream.message_send.fail");
+        logger.error({ chatId, senderId, err }, "stream.message_send.fail");
       }
       throw err;
     }
+  }
 
+  static sendUserMessage(userId: string, chatId: string, message: string) {
+    return this.sendMessageToStream(chatId, userId, message);
+  }
+
+  static sendAiMessage(chatId: string, message: string) {
+    return this.sendMessageToStream(chatId, this.ai_user, message);
   }
 
   /** @internal testing only */
