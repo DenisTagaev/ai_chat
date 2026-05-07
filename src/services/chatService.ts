@@ -1,17 +1,43 @@
-import { createChatSession, saveStreamChatMessageToDB } from "../db/operations";
+import { createChatSession, getChatSessionsByUserId, saveStreamChatMessageToDB } from "../db/operations";
 import { StreamChatService } from "./streamChatService";
 import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
 import { GeminiMessage } from "../utils/interfaces";
-import { ChatResponse, ChatSessionResponse } from "../utils/types";
+import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse } from "../utils/types";
 import { UserService } from "./userService";
 import { logger } from "../utils/logger";
 import { generateChatId } from "../utils/idGenerator";
 export class ChatService {
+  // ---- Retrieve all user chats ---- //
+  static async getUserChats(userId: string): Promise<ChatSessionsListResponse> {
+    if (!userId?.trim()) {
+      return { type: "validation_error" };
+    }
+
+    // ---- verify user exists ---- //
+    const registrationState: string =
+      await UserService.getUserRegisterState(userId);
+
+    if (registrationState === "inconsistent_registration") {
+      logger.debug("chat.registration.inconsistent");
+      return { type: "user_not_found" };
+    }
+
+    try {
+     const chats = await getChatSessionsByUserId(userId);
+
+     logger.info({ userId, chatsCount: chats.length }, "chat.sessions.retrieved");
+     return { type: "success", chats };
+    } catch (error) {
+      logger.error({ error, userId }, "chat.sessions.retrieval_failed");
+      return { type: "internal_error" };
+    }
+  }
+
   // ---- Create new chat with initial message ---- //
   static async createChat(
     userId: string,
-    firstMessage: string
+    firstMessage: string,
   ): Promise<ChatSessionResponse> {
     if (!userId || !firstMessage.trim()) {
       return { type: "validation_error" };

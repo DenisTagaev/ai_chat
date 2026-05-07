@@ -11,17 +11,22 @@ export type AuthResult =
       user: StreamUser;
     };
 
-export type ChatResponse =
+export type BaseChatResponse =
   | { type: "validation_error" }
   | { type: "user_not_found" }
-  | { type: "internal_error" }
+  | { type: "internal_error" };
+
+export type ChatResponse =
+  | BaseChatResponse
   | { type: "success"; reply: string };
 
 export type ChatSessionResponse =
-  | { type: "validation_error" }
-  | { type: "user_not_found" }
-  | { type: "internal_error" }
+  | BaseChatResponse
   | { type: "success"; chatId: string };
+
+export type ChatSessionsListResponse =
+  | BaseChatResponse
+  | { type: "success"; chats: ChatSelect[] };
 
 export type UserRegistrationState =
   | "registered"
