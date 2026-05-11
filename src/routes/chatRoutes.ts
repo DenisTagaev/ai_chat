@@ -1,18 +1,21 @@
 import { Router } from "express";
-import {
-  getUserChatHistory,
-  handleAiChat,
-} from "../controllers/aiChatController";
+import { createChat, getChatHistory, getUserChats, sendMessage } from "../controllers/aiChatController";
 import { validate } from "../middleware/zodValidator";
 import {
-  aiChatSchema,
   chatHistorySchema,
+  createChatSchema,
+  sendMessageSchema,
+  userChatsSchema,
 } from "../db/validators/zodChatSchemas";
 
 const router: Router = Router();
 
-router.post("/chat-history", validate(chatHistorySchema), getUserChatHistory);
+router.get("/chats", validate(userChatsSchema), getUserChats);
 
-router.post("/chat", validate(aiChatSchema), handleAiChat);
+router.get("/chats/:chatId/history", validate(chatHistorySchema), getChatHistory);
+
+router.post("/chats", validate(createChatSchema), createChat);
+
+router.post("/chats/:chatId", validate(sendMessageSchema), sendMessage);
 
 export default router;
