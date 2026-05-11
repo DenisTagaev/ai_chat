@@ -1,10 +1,16 @@
 import { Response } from "express";
-import { ChatResponse } from "../utils/types";
+import {
+  ChatResponse,
+  ChatSessionResponse,
+  ChatSessionsListResponse
+} from "../utils/types";
+
+type ChatResult = ChatResponse | ChatSessionResponse | ChatSessionsListResponse;
 
 export class ChatResultMapper {
   static toHttp(
     res: Response,
-    result: ChatResponse,
+    result: ChatResult,
   ): Response<any, Record<string, any>> {
     switch (result.type) {
       case "validation_error":
@@ -17,10 +23,34 @@ export class ChatResultMapper {
           error: "User not found",
         });
 
-      case "success":
-        return res.status(200).json({
-          reply: result.reply,
+      case "internal_error":
+        return res.status(500).json({
+          error: "Internal Server Error",
         });
+
+      case "success":
+        if ("chatId" in result) {
+          return res.status(201).json({
+            chatId: result.chatId,
+          });
+        }
+
+        if ("chats" in result) {
+          return res.status(200).json({
+            chats: result.chats,
+          });
+        }
+
+        if ("reply" in result) {
+          return res.status(200).json({
+            reply: result.reply,
+          });
+        }
+
+        return res.status(500).json({
+          error: "Unknown success result",
+        });
+
       default:
         return res.status(500).json({
           error: "Unknown chat result type",

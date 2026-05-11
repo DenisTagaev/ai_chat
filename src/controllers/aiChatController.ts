@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ChatService } from "../services/chatService";
-import { ChatResponse, ChatSessionResponse } from "../utils/types";
+import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse } from "../utils/types";
 import { ChatResultMapper } from "../middleware/chatResultMapper";
 import { ChatHistoryService } from "../services/chatHistoryService";
 
@@ -76,9 +76,8 @@ export async function getUserChats(
       return res.status(400).json({ error: "Missing userId" });
     }
 
-    const chats = await ChatService.getUserChats(userId);
-
-    return res.status(200).json({ chats });
+    const chatResponse: ChatSessionsListResponse = await ChatService.getUserChats(userId);
+    return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: any) {
     req.log.error({ err, userId }, "User Chats Error");
     return res.status(500).json({ error: "Internal Server Error" });
