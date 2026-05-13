@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { readonly, ref, watch } from "vue";
-import axios from "axios";
+import { readonly, ref } from "vue";
+import axios, { type AxiosInstance } from "axios";
 import { useUserStore } from "./user";
 
 interface MessageState {
@@ -28,13 +28,13 @@ export const useChatStore = defineStore("chat",  () => {
 
     const abortActiveRequest = (): void => {
       if (abortController) {
-        abortController.abort();
+        abortController?.abort();
         abortController = null;
       }
     };
 
-    const api = axios.create({
-      baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai",
+    const api: AxiosInstance = axios.create({
+      baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai/chats",
     });
 
     const hydrateMessages = (): void => {
@@ -53,24 +53,21 @@ export const useChatStore = defineStore("chat",  () => {
       isHydrated.value = true;
     }
 
-    const loadChatHistory = async (): Promise<void> => {
-        if(!userStore.userId || messages.value.length) return;
+    const loadChatHistory = async (chatId: string): Promise<void> => {
+        if(!userStore.userId || !chatId) return;
 
         isInitializing.value = true;
         error.value = null;
 
-        abortActiveRequest();
-        abortController = new AbortController();
-
         try {
-            const { data } = await api.post(
-              '/chat-history',
+            const { data } = await api.get(
+              `/${chatId}/chat-history`,
               {
-                userId: userStore.userId,
+                params: {
+                  userId: userStore.userId,
+                  chatId: chatId,
+                },
               },
-              {
-                signal: abortController.signal
-              }
             );
 
             messages.value = data.messages.flatMap((msg: MessageState): FormattedMessageState[] => [
@@ -78,13 +75,9 @@ export const useChatStore = defineStore("chat",  () => {
                 { role: 'model', content: msg.reply },
             ]).filter((msg: FormattedMessageState) => msg.content);
         } catch (err: any) {
-            if(err.name !== "AbortError"){
-                error.value = 'Failed to load chat history';
-                console.error(`Error loading chat history: ${err}`);
-            }
+          console.error(`Error loading chat history: ${err}`);
         } finally {
-            isInitializing.value = false;
-            abortController = null;
+          isInitializing.value = false;
         }
     }
 
@@ -92,11 +85,10 @@ export const useChatStore = defineStore("chat",  () => {
         abortActiveRequest();
         messages.value = [];
         error.value = null;
-        localStorage.removeItem(STORAGE_KEY);
     }
 
-    const sendAIRequest = async (message: string): Promise<void> => {
-        if(!message.trim() || !userStore.userId) return;
+    const sendAIRequest = async (chatId: string, message: string): Promise<void> => {
+        if(!message.trim() || !userStore.userId || !chatId) return;
 
         messages.value.push({ role: 'user', content: message });
         isLoading.value = true;
@@ -106,10 +98,11 @@ export const useChatStore = defineStore("chat",  () => {
 
         try {
             const { data } = await api.post(
-              "/chat",
+              `/${chatId}`,
               {
                 message,
                 userId: userStore.userId,
+                chatId: chatId,
               },
               {
                 signal: abortController.signal,
@@ -122,6 +115,7 @@ export const useChatStore = defineStore("chat",  () => {
 
             console.error('Error sending message: ', err);
             error.value = 'Failed to reach the server';
+
             messages.value.push({
                 role: 'model',
                 content: 'Error, enable to process the request'
@@ -131,16 +125,6 @@ export const useChatStore = defineStore("chat",  () => {
             abortController = null;
         }
     }
-
-    watch(
-      messages,
-      (val: FormattedMessageState[]) => {
-        if(!isHydrated.value) return;
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
-      },
-      { deep: true }
-    )
 
     return {
        messages: readonly(messages),
