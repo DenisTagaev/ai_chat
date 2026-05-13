@@ -8,6 +8,17 @@ import { UserService } from "./userService";
 import { logger } from "../utils/logger";
 import { generateChatId } from "../utils/idGenerator";
 export class ChatService {
+  private static generateChatTitleFromMessage(message: string): string {
+    const maxLength: number = 25;
+    const singleLineMessage: string = message.replace(/\s+/g, " ").trim();
+
+    if(!singleLineMessage) return "New Chat";
+
+    return singleLineMessage.length > maxLength
+      ? singleLineMessage.substring(0, maxLength) + "..."
+      : singleLineMessage;
+  }
+
   // ---- Retrieve all user chats ---- //
   static async getUserChats(userId: string): Promise<ChatSessionsListResponse> {
     if (!userId?.trim()) {
@@ -55,17 +66,24 @@ export class ChatService {
     const chatId: string = generateChatId();
 
     try {
-      await createChatSession(chatId, userId, "New Chat");
+      await createChatSession(chatId, userId, this.generateChatTitleFromMessage(firstMessage));
       await StreamChatService.getOrCreateChatChannel(userId, chatId);
 
       const firstReply: string = await geminiAiService.generateResponse(
         firstMessage,
         [],
       );
+
+      // ---- send to stream ---- //
       await StreamChatService.sendUserMessage(userId, chatId, firstMessage);
       logger.debug({ chatId }, "chat.stream.message_sent");
+
       await StreamChatService.sendAiMessage(chatId, firstReply);
       logger.debug({ chatId }, "chat.stream.message_sent");
+
+      // ---- persist ---- //
+      await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
+      logger.debug({ chatId }, "chat.db.message_saved");
 
       await ChatHistoryService.addMessageToHistory(
         chatId,
@@ -123,6 +141,7 @@ export class ChatService {
       // ---- send to stream ---- //
       await StreamChatService.sendUserMessage(userId, chatId, message);
       logger.debug({ chatId }, "chat.stream.message_sent");
+
       await StreamChatService.sendAiMessage(chatId, fullReply);
       logger.debug({ chatId }, "chat.stream.message_sent");
 
