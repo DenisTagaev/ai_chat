@@ -15,9 +15,10 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/chat",
+    path: "/chat/:chatId",
     name: "AI chat",
     component: () => import("../views/ChatView.vue"),
+    props: true,
     meta: {
       title: "AI assistant chat - Private Channel",
       description: "Your private AI chat channel conversation",
@@ -61,6 +62,7 @@ router.beforeEach((to, from, next) => {
 
 router.afterEach((to) => {
   document.title = (to.meta.title as string) ?? "AI Assistant Chat";
+
   const descriptionTag: HTMLMetaElement | null =
     document.querySelector<HTMLMetaElement>('meta[name="description"]');
 
