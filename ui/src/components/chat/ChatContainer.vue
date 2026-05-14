@@ -1,25 +1,39 @@
 <script setup lang="ts">
-    import { ref } from 'vue'
+    import { ref, onMounted } from 'vue'
+    import { useRoute } from 'vue-router'
     import { useChatStore } from '../../stores/chat'
+
     import ChatMessageList from './ChatMessageList.vue'
     import ChatTypingIndicator from './ChatTypingIndicator.vue'
     import ChatError from './ChatError.vue'
-    import { useAutoScroll } from '../../composables/useAutoScroll';
     import NewMessage from './NewMessage.vue'
+    import { useAutoScroll } from '../../composables/useAutoScroll';
 
-    const chatStore = useChatStore()
-    const containerRef = ref<HTMLElement | null>(null)
+    const route = useRoute();
+    const chatStore = useChatStore();
+    const containerRef = ref<HTMLElement | null>(null);
+    const chatId: string = route.params.chatId as string;
 
-    useAutoScroll(containerRef, () => chatStore.messages.length)
+    useAutoScroll(containerRef, () => chatStore.messages.length);
+
+    onMounted(async() => {
+        if(!chatId) {
+            console.error("Chat ID is missing in route parameters.");
+            return;
+        }
+
+        chatStore.reset();
+        await chatStore.loadChatHistory(chatId);
+    });
 </script>
 
 <template>
-    <div 
+    <div
         ref="containerRef"
         class="flex-1 overflow-y-auto p-4 space-y-4"
         aria-live="polite"
     >
-        <div v-show="chatStore.isInitializing">
+        <div v-show="chatStore.isInitializing" class="space-y-2 animate-pulse">
             <div class="h-3 w-1/2 rounded bg-white/30"></div>
             <div class="h-3 w-3/4 rounded bg-white/20"></div>
         </div>
@@ -29,5 +43,5 @@
             <ChatTypingIndicator v-if="chatStore.isLoading" />
         </div>
     </div>
-    <NewMessage v-if="!chatStore.isInitializing" @send="chatStore.sendAIRequest"/>
+    <NewMessage v-if="!chatStore.isInitializing" @send="chatStore.sendAIRequest(chatId, $event)"/>
 </template>
