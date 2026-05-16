@@ -5,7 +5,6 @@
         (e: 'send', message: string): void
     }>();
 
-    const message = ref('');
     const input = ref("");
     const isSending = ref(false);
 
@@ -17,7 +16,7 @@
         if(!canSend()) return;
 
         isSending.value = true;
-        const msgToSend = input.value.trim();
+        const msgToSend: string = input.value.trim();
 
         try {
             emit('send', msgToSend);

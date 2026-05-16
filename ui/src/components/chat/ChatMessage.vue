@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed } from 'vue'
+    import { computed, type ComputedRef } from 'vue'
     import { useMessageFormatter } from '../../composables/useMessageFormatter'
 
     const props = defineProps<{
@@ -9,7 +9,7 @@
 
     const { format } = useMessageFormatter()
 
-    const formattedContent = computed(
+    const formattedContent: ComputedRef<string> = computed(
         () => {
           if(!props.content) return "";
           return props.role === "model"

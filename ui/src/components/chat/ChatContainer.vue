@@ -14,9 +14,9 @@
     const containerRef = ref<HTMLElement | null>(null);
     const chatId: string = route.params.chatId as string;
 
-    useAutoScroll(containerRef, () => chatStore.messages.length);
+    useAutoScroll(containerRef, (): number => chatStore.messages.length);
 
-    onMounted(async() => {
+    onMounted(async(): Promise<void> => {
         if(!chatId) {
             console.error("Chat ID is missing in route parameters.");
             return;
