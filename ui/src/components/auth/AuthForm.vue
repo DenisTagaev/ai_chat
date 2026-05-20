@@ -33,7 +33,7 @@
 
         try {
             const { data } = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/users/login`,
+                `${import.meta.env.VITE_API_URL}/api/users/auth`,
                 { name: name.value.trim(), email: email.value.trim().toLowerCase() }
             );
 

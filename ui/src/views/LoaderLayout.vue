@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import Loader from '../components/Loader.vue'
-    import { isRouteLoading } from '../router'
+    import { isRouteLoading } from '../composables/useRouteLoading'
 </script>
 
 <template>
