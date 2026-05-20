@@ -15,9 +15,20 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/chat/:chatId",
+    path: "/chats",
+    name: "Chats List",
+    component: () => import("../views/ChatsView.vue"),
+    props: true,
+    meta: {
+      title: "Assistant chats - Channels List",
+      description: "Your private AI chat channels list",
+      robots: "noindex, nofollow",
+    },
+  },
+  {
+    path: "/chats/:chatId/history",
     name: "AI chat",
-    component: () => import("../views/ChatView.vue"),
+    component: () => import("../components/chat/ChatWindow.vue"),
     props: true,
     meta: {
       title: "AI assistant chat - Private Channel",
@@ -31,7 +42,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../views/NotFound.vue"),
     meta: {
       title: "404 – Page Not Found",
-      robots: "noindex, nofollow"
+      robots: "noindex, nofollow",
     },
   },
 ];

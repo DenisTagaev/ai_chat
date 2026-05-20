@@ -1,14 +1,17 @@
 <script setup lang="ts">
     import { defineAsyncComponent, nextTick, onMounted } from 'vue';
-    import { useRouter } from 'vue-router';
-    import { useUserStore } from '../stores/user';
-    import { useChatStore } from '../stores/chat';
-    import Header from '../components/Header.vue';
-    import Loader from '../components/Loader.vue'
+    import { useRoute, useRouter } from 'vue-router';
+    import { useUserStore } from '../../stores/user';
+    import { useChatStore } from '../../stores/chat';
+
+    import Header from '../Header.vue';
+    import Loader from '../Loader.vue'
 
     const userStore = useUserStore();
     const chatStore = useChatStore();
+
     const router = useRouter();
+    const route = useRoute();
 
     onMounted(async (): Promise<void> => {
         if(!userStore.userId) {
@@ -16,16 +19,23 @@
             return;
         }
 
+        const chatId = route.params.id as string | undefined;
+
+        if (!chatId) {
+            await router.replace("/chats");
+            return;
+        }
+
         chatStore.hydrateMessages();
 
         if(!chatStore.messages.length){
-            await chatStore.loadChatHistory();
+            await chatStore.loadChatHistory(chatId);
             await nextTick();
         }
     });
 
     const ChatContainer = defineAsyncComponent({
-        loader: () => import('../components/chat/ChatContainer.vue'),
+        loader: () => import('./ChatContainer.vue'),
         delay: 0,
     });
 </script>
