@@ -42,7 +42,6 @@
 
 <template>
     <section class="flex flex-col h-screen bg-slate-900 text-slate-50">
-        <Header/>
         <Suspense>
             <template #default>
                 <ChatContainer/>
