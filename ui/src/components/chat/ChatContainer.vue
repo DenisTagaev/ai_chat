@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, onMounted } from 'vue'
+    import { ref, onMounted, computed, type ComputedRef, watch } from 'vue'
     import { useRoute } from 'vue-router'
     import { useChatStore } from '../../stores/chat'
 
@@ -12,18 +12,25 @@
     const route = useRoute();
     const chatStore = useChatStore();
     const containerRef = ref<HTMLElement | null>(null);
-    const chatId: string = route.params.chatId as string;
+    const chatId: ComputedRef<string> = computed<string>(() => route.params.chatId as string);
 
     useAutoScroll(containerRef, (): number => chatStore.messages.length);
 
-    onMounted(async(): Promise<void> => {
-        if(!chatId) {
-            console.error("Chat ID is missing in route parameters.");
+    const loadChat = async (id: string): Promise<void> => {
+        if (!id) {
             return;
         }
 
         chatStore.reset();
-        await chatStore.loadChatHistory(chatId);
+        await chatStore.loadChatHistory(id);
+    };
+
+    onMounted((): Promise<void> => loadChat(chatId.value));
+
+    watch(chatId, (id: string, previousId: string): void => {
+        if (id !== previousId) {
+            loadChat(id);
+        }
     });
 </script>
 
