@@ -28,7 +28,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/chats/:chatId/history",
     name: "AI chat",
-    component: () => import("../components/chat/ChatWindow.vue"),
+    component: () => import("../views/ChatsView.vue"),
     props: true,
     meta: {
       title: "AI assistant chat - Private Channel",

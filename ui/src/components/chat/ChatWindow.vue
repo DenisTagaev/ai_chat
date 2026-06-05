@@ -4,7 +4,6 @@
     import { useUserStore } from '../../stores/user';
     import { useChatStore } from '../../stores/chat';
 
-    import Header from '../Header.vue';
     import Loader from '../Loader.vue'
 
     const userStore = useUserStore();
@@ -38,13 +37,19 @@
         loader: () => import('./ChatContainer.vue'),
         delay: 0,
     });
+
+    const ChatEmpty = defineAsyncComponent({
+        loader: () => import('./ChatEmpty.vue'),
+        delay: 0,
+    });
 </script>
 
 <template>
     <section class="flex flex-col h-screen bg-slate-900 text-slate-50">
         <Suspense>
             <template #default>
-                <ChatContainer/>
+                <ChatEmpty v-if="!chatStore.messages.length" :has-chats="true"/>
+                <ChatContainer v-else/>
             </template>
 
             <template #fallback>
