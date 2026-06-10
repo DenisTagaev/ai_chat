@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, onMounted, computed, type ComputedRef, watch } from 'vue'
+    import { ref, computed, type ComputedRef, watch } from 'vue'
     import { useRoute } from 'vue-router'
     import { useChatStore } from '../../stores/chat'
 
@@ -25,13 +25,13 @@
         await chatStore.loadChatHistory(id);
     };
 
-    onMounted((): Promise<void> => loadChat(chatId.value));
-
-    watch(chatId, (id: string, previousId: string): void => {
-        if (id !== previousId) {
-            loadChat(id);
-        }
-    });
+    watch(
+        chatId,
+        async (id: string): Promise<void> => {
+            await loadChat(id);
+        },
+        { immediate: true }
+    );
 </script>
 
 <template>
