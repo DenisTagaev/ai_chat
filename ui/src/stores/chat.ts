@@ -65,7 +65,7 @@ export const useChatStore = defineStore("chat",  () => {
             messages.value = data.messages.flatMap((msg: MessageState): FormattedMessageState[] => [
                 { role: 'user', content: msg.message },
                 { role: 'model', content: msg.reply },
-            ]).filter((msg: FormattedMessageState) => msg.content);
+            ]).filter((msg: FormattedMessageState): boolean => !!msg.content);
         } catch (err: unknown) {
           if (axios.isAxiosError(err) && err.response) {
             console.error(`API error: ${err.response.status} - ${err.response.data}`);
@@ -80,6 +80,7 @@ export const useChatStore = defineStore("chat",  () => {
           }
         } finally {
           isInitializing.value = false;
+          abortController = null;
         }
     }
 
@@ -116,11 +117,18 @@ export const useChatStore = defineStore("chat",  () => {
 
             messages.value.push({ role: "model", content: data.reply });
         } catch (err: unknown) {
-            if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
-
-            console.error('Error sending message: ', err);
-            error.value = 'Failed to reach the server';
-
+            if (axios.isAxiosError(err) && err.response) {
+              console.error(`API error: ${err.response.status} - ${err.response.data}`);
+              error.value = `Failed to send message: ${err.response.data?.message || 'Unknown error'}`;
+            } else if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
+            
+            else if (err instanceof Error) {
+              console.error('Error sending message: ', err);
+              error.value = 'Failed to reach the server';
+            } else {
+              error.value = 'Failed to send message';
+            }
+            
             messages.value.push({
                 role: 'model',
                 content: 'Error, enable to process the request'
