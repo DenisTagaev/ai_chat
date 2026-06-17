@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import axios, { type AxiosInstance } from "axios";
+import { api } from "../services/api";
 import { useUserStore } from "./user";
 
 export interface ChatSession {
@@ -12,10 +12,6 @@ export interface ChatSession {
 export const useChatSessionsStore = defineStore("chatSessions", () => {
   const sessions = ref<ChatSession[]>([]);
   const userStore = useUserStore();
-
-  const api: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai/chats",
-  });
 
   async function fetchSessions() {
     if (!userStore.userId) return;

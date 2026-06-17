@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
-import axios, { type AxiosInstance } from "axios";
+import axios from "axios";
+import { api } from "../services/api";
 import { useUserStore } from "./user";
 
 interface MessageState {
@@ -37,10 +38,6 @@ export const useChatStore = defineStore("chat",  () => {
         abortController = null;
       }
     };
-
-    const api: AxiosInstance = axios.create({
-      baseURL: import.meta.env.VITE_API_URL.replace(/\/$/, "") + "/api/ai/chats",
-    });
 
     const loadChatHistory = async (chatId: string): Promise<void> => {
         if(!userStore.userId || !chatId) return;
