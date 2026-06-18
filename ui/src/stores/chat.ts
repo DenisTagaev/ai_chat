@@ -1,25 +1,12 @@
 import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
 import axios from "axios";
-import { api } from "../services/api";
 import { useUserStore } from "./user";
-
-interface MessageState {
-  message: string;
-  reply: string;
-}
+import { chatService, type MessageState } from "../services/chatService";
 
 interface FormattedMessageState {
     role: 'user' | 'model';
     content: string;
-}
-
-interface ChatHistoryResponse {
-  messages: MessageState[];
-}
-
-interface SendMessageResponse {
-  reply: string;
 }
 
 export const useChatStore = defineStore("chat",  () => {
@@ -49,14 +36,10 @@ export const useChatStore = defineStore("chat",  () => {
         abortController = new AbortController();
 
         try {
-            const { data } = await api.get<ChatHistoryResponse>(
-              `/${chatId}/history`,
-              {
-                params: {
-                  userId: userStore.userId,
-                },
-                signal: abortController.signal,
-              },
+            const data = await chatService.getChatHistory(
+              chatId,
+              userStore.userId,
+              abortController.signal,
             );
 
             messages.value = data.messages.flatMap((msg: MessageState): FormattedMessageState[] => [
@@ -101,15 +84,11 @@ export const useChatStore = defineStore("chat",  () => {
         abortController = new AbortController();
 
         try {
-            const { data } = await api.post<SendMessageResponse>(
-              `/${chatId}`,
-              {
-                message,
-                userId: userStore.userId,
-              },
-              {
-                signal: abortController.signal,
-              },
+            const data = await chatService.sendMessage(
+              chatId,
+              userStore.userId,
+              message,
+              abortController.signal
             );
 
             messages.value.push({ role: "model", content: data.reply });
