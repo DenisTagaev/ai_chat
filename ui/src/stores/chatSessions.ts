@@ -1,49 +1,82 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
-import { api } from "../services/api";
+import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
-
-export interface ChatSession {
-  chatId: string;
-  title: string;
-  updatedAt: string;
-}
+import { sessionsService, type ChatSession } from "../services/sessionsService";
+import { AxiosError } from "axios";
 
 export const useChatSessionsStore = defineStore("chatSessions", () => {
+  let abortController: AbortController | null = null;
   const sessions = ref<ChatSession[]>([]);
   const userStore = useUserStore();
 
-  async function fetchSessions() {
+  const abortActiveRequest = (): void => {
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
+    }
+  };
+
+  async function fetchSessions(): Promise<void> {
     if (!userStore.userId) return;
 
-    const { data } = await api.get("/", {
-      params: {
-        userId: userStore.userId,
-      },
-    });
+    abortActiveRequest();
+    abortController = new AbortController();
 
-    sessions.value = data.chats;
+    try {
+      const chats = await sessionsService.fetchSessions(userStore.userId, abortController.signal);
+
+      sessions.value = chats;
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response) {
+        console.error(
+          `API error: ${error.response.status} - ${error.response.data}`,
+        );
+      } else if (
+        error instanceof Error && 
+        (error.name === "CanceledError" || error.name === "AbortError")
+      ) return;
+      
+      else if (error instanceof Error) {
+        console.error("Error fetching sessions:", error.message);
+      } else console.error("Error fetching sessions");
+    } finally {
+      abortController = null;
+    }
   }
 
-  async function createSession(firstMessage: string) {
+  async function createSession(firstMessage: string): Promise<void> {
     if (!userStore.userId) return;
 
-    const { data } = await api.post("/", {
-      userId: userStore.userId,
-      firstMessage,
-    });
+    abortActiveRequest();
+    abortController = new AbortController();
 
-    sessions.value.unshift(data);
-    return data;
+    try {
+      const data = await sessionsService.createSession(userStore.userId, firstMessage, abortController.signal);
+      sessions.value.unshift(data);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response) {
+        console.error(
+          `API error: ${error.response.status} - ${error.response.data}`,
+        );
+      } else if (
+        error instanceof Error &&
+        (error.name === "CanceledError" || error.name === "AbortError")
+      ) return;
+
+      else if (error instanceof Error) {
+        console.error("Error creating session:", error.message);
+      } else console.error("Error creating session");
+    } finally {
+      abortController = null;
+    }
   }
 
   function reset() {
     sessions.value = [];
-
   }
 
   return {
-    sessions,
+    sessions: readonly(sessions),
     fetchSessions,
     createSession,
     reset,
