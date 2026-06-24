@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
 import { sessionsService, type ChatSession } from "../services/sessionsService";
-import { AxiosError } from "axios";
+import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
 
 export const useChatSessionsStore = defineStore("chatSessions", () => {
   let abortController: AbortController | null = null;
@@ -27,18 +27,14 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
 
       sessions.value = chats;
     } catch (error: unknown) {
-      if (error instanceof AxiosError && error.response) {
-        console.error(
-          `API error: ${error.response.status} - ${error.response.data}`,
-        );
-      } else if (
-        error instanceof Error && 
-        (error.name === "CanceledError" || error.name === "AbortError")
-      ) return;
-      
-      else if (error instanceof Error) {
-        console.error("Error fetching sessions:", error.message);
-      } else console.error("Error fetching sessions");
+      const errorResult: ApiErrorResult = handleApiError(
+        error,
+        'Failed to fetch chat sessions'
+      );
+
+      if (errorResult.message) {
+        console.error(errorResult.message);
+      }
     } finally {
       abortController = null;
     }
@@ -54,18 +50,14 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
       const data = await sessionsService.createSession(userStore.userId, firstMessage, abortController.signal);
       sessions.value.unshift(data);
     } catch (error: unknown) {
-      if (error instanceof AxiosError && error.response) {
-        console.error(
-          `API error: ${error.response.status} - ${error.response.data}`,
-        );
-      } else if (
-        error instanceof Error &&
-        (error.name === "CanceledError" || error.name === "AbortError")
-      ) return;
+      const errorResult: ApiErrorResult = handleApiError(
+        error,
+        'Failed to create chat session'
+      );
 
-      else if (error instanceof Error) {
-        console.error("Error creating session:", error.message);
-      } else console.error("Error creating session");
+      if (errorResult.message) {
+        console.error(errorResult.message);
+      }
     } finally {
       abortController = null;
     }

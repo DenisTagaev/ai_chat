@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
-import axios from "axios";
 import { useUserStore } from "./user";
 import { chatService, type MessageState } from "../services/chatService";
+import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
 
 interface FormattedMessageState {
     role: 'user' | 'model';
@@ -47,17 +47,11 @@ export const useChatStore = defineStore("chat",  () => {
                 { role: 'model', content: msg.reply },
             ]).filter((msg: FormattedMessageState): boolean => !!msg.content);
         } catch (err: unknown) {
-          if (axios.isAxiosError(err) && err.response) {
-            console.error(`API error: ${err.response.status} - ${err.response.data}`);
-            error.value = `Failed to load chat history: ${err.response.data?.message || 'Unknown error'}`;
-          }
-          else if (err instanceof Error) {
-            console.error('Error loading chat history: ', err);
-            error.value = 'Failed to load chat history';
-          }
-          else {
-            error.value = 'Failed to load chat history';
-          }
+            const errorResult: ApiErrorResult = handleApiError(err, 'Failed to load chat history');
+
+            if (errorResult.message) {
+                error.value = errorResult.message;
+            }
         } finally {
           isInitializing.value = false;
           abortController = null;
@@ -93,18 +87,12 @@ export const useChatStore = defineStore("chat",  () => {
 
             messages.value.push({ role: "model", content: data.reply });
         } catch (err: unknown) {
-            if (axios.isAxiosError(err) && err.response) {
-              console.error(`API error: ${err.response.status} - ${err.response.data}`);
-              error.value = `Failed to send message: ${err.response.data?.message || 'Unknown error'}`;
-            } else if (err instanceof Error && (err.name === "CanceledError" || err.name === "AbortError")) return;
-            
-            else if (err instanceof Error) {
-              console.error('Error sending message: ', err);
-              error.value = 'Failed to reach the server';
-            } else {
-              error.value = 'Failed to send message';
+            const errorResult: ApiErrorResult = handleApiError(err, 'Failed to send message');
+
+            if (errorResult.message) {
+                error.value = errorResult.message;
             }
-            
+
             messages.value.push({
                 role: 'model',
                 content: 'Error, enable to process the request'
