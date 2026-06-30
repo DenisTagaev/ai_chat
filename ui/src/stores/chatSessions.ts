@@ -3,27 +3,20 @@ import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
 import { sessionsService, type ChatSession } from "../services/sessionsService";
 import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
+import { useAbortController } from "../composables/useAbortController";
 
 export const useChatSessionsStore = defineStore("chatSessions", () => {
-  let abortController: AbortController | null = null;
+  const { controller, create, abort: abortRequest } = useAbortController();
   const sessions = ref<ChatSession[]>([]);
   const userStore = useUserStore();
-
-  const abortActiveRequest = (): void => {
-    if (abortController) {
-      abortController.abort();
-      abortController = null;
-    }
-  };
 
   async function fetchSessions(): Promise<void> {
     if (!userStore.userId) return;
 
-    abortActiveRequest();
-    abortController = new AbortController();
+    create();
 
     try {
-      const chats = await sessionsService.fetchSessions(userStore.userId, abortController.signal);
+      const chats = await sessionsService.fetchSessions(userStore.userId, controller.value?.signal);
 
       sessions.value = chats;
     } catch (error: unknown) {
@@ -36,18 +29,17 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
         console.error(errorResult.message);
       }
     } finally {
-      abortController = null;
+      abortRequest();
     }
   }
 
   async function createSession(firstMessage: string): Promise<void> {
     if (!userStore.userId) return;
 
-    abortActiveRequest();
-    abortController = new AbortController();
+    create();
 
     try {
-      const data = await sessionsService.createSession(userStore.userId, firstMessage, abortController.signal);
+      const data = await sessionsService.createSession(userStore.userId, firstMessage, controller.value?.signal);
       sessions.value.unshift(data);
     } catch (error: unknown) {
       const errorResult: ApiErrorResult = handleApiError(
@@ -59,7 +51,7 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
         console.error(errorResult.message);
       }
     } finally {
-      abortController = null;
+      abortRequest();
     }
   }
 

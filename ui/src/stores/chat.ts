@@ -3,6 +3,7 @@ import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
 import { chatService, type MessageState } from "../services/chatService";
 import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
+import { useAbortController } from "../composables/useAbortController";
 
 interface FormattedMessageState {
     role: 'user' | 'model';
@@ -10,7 +11,7 @@ interface FormattedMessageState {
 }
 
 export const useChatStore = defineStore("chat",  () => {
-    let abortController: AbortController | null = null;
+    const { controller, create, abort: abortRequest } = useAbortController();
 
     const messages = ref<FormattedMessageState[]>([]);
     const isInitializing = ref(false);
@@ -19,27 +20,19 @@ export const useChatStore = defineStore("chat",  () => {
 
     const userStore = useUserStore();
 
-    const abortActiveRequest = (): void => {
-      if (abortController) {
-        abortController.abort();
-        abortController = null;
-      }
-    };
-
     const loadChatHistory = async (chatId: string): Promise<void> => {
         if(!userStore.userId || !chatId) return;
 
         isInitializing.value = true;
         error.value = null;
 
-        abortActiveRequest();
-        abortController = new AbortController();
+        create();
 
         try {
             const data = await chatService.getChatHistory(
               chatId,
               userStore.userId,
-              abortController.signal,
+              controller.value?.signal,
             );
 
             messages.value = data.messages.flatMap((msg: MessageState): FormattedMessageState[] => [
@@ -54,12 +47,12 @@ export const useChatStore = defineStore("chat",  () => {
             }
         } finally {
           isInitializing.value = false;
-          abortController = null;
+          abortRequest();
         }
     }
 
     const reset = (): void => {
-        abortActiveRequest();
+        abortRequest();
 
         messages.value = [];
         error.value = null;
@@ -74,15 +67,14 @@ export const useChatStore = defineStore("chat",  () => {
         messages.value.push({ role: 'user', content: message });
         isLoading.value = true;
 
-        abortActiveRequest();
-        abortController = new AbortController();
+        create();
 
         try {
             const data = await chatService.sendMessage(
               chatId,
               userStore.userId,
               message,
-              abortController.signal
+              controller.value?.signal
             );
 
             messages.value.push({ role: "model", content: data.reply });
@@ -99,7 +91,7 @@ export const useChatStore = defineStore("chat",  () => {
             });
         } finally {
             isLoading.value = false;
-            abortController = null;
+            abortRequest();
         }
     }
 
@@ -110,7 +102,6 @@ export const useChatStore = defineStore("chat",  () => {
        error: readonly(error),
        loadChatHistory,
        sendAIRequest,
-       abortActiveRequest,
        reset,
      };
 });
