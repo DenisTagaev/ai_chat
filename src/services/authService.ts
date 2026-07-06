@@ -54,7 +54,7 @@ export class AuthService {
     const state: string = await UserService.getUserRegisterState(userId);
 
     switch (state) {
-      case "fully_registered":
+      case "registered":
         logger.info("auth.login.success");
         return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
 
@@ -62,7 +62,7 @@ export class AuthService {
         logger.warn("auth.registration.conflict");
         return { type: "already_registered" };
 
-      case "not_registered":
+      case "unregistered":
         break;
     }
 
