@@ -28,10 +28,10 @@ export type ChatSessionsListResponse =
   | BaseChatResponse
   | { type: "success"; chats: ChatSelect[] };
 
-export type UserRegistrationState =
-  | "registered"
-  | "unregistered"
-  | "inconsistent_registration";
+export type UserRegistrationState = {
+  isNeonUser: boolean;
+  isStreamUser: boolean;
+};
 
   export type RequestContext = {
     reqId: string;

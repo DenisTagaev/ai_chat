@@ -12,25 +12,20 @@ export class UserService {
   static async getUserRegisterState(userId: string):
    Promise<UserRegistrationState> {
     try {
-      const existingNeonUser: {
+      const neonUser: {
         [x: string]: any;
       }[] = await getNeonUserById(userId);
-      const existingStreamUser: APIResponse & {
+      const streamUser: APIResponse & {
         users: UserResponse[];
       } = await StreamChatService.getStreamUser(userId);
 
-      if(existingNeonUser.length > 0 && existingStreamUser.users?.length > 0) {
-        logger.info("user.status.registered");
-        return "registered";
-      }
+      const isNeonUser: boolean = neonUser.length > 0;
+      const isStreamUser: boolean = !!streamUser.users?.length;
 
-      if (existingNeonUser.length <= 0 && existingStreamUser.users?.length <= 0) {
-        logger.info("user.status.unregistered");
-        return "unregistered";
-      }
-
-      logger.warn("user.status.inconsistent_registration");
-      return "inconsistent_registration";
+      return {
+        isNeonUser,
+        isStreamUser
+      };
     } catch (err) {
       logger.error({ err }, "user.service.fail");
       throw err;
