@@ -4,7 +4,7 @@ import { createNeonUser } from "../db/operations";
 import { StreamUser } from "../utils/interfaces";
 import { getRedisClient } from "./redisService";
 import { validateAndNormalizeData } from "../utils/dataValidator";
-import { AuthResult } from "../utils/types";
+import { AuthResult, UserRegistrationState } from "../utils/types";
 import { ChatHistoryService } from "./chatHistoryService";
 import { UserService } from "./userService";
 import { logger } from "../utils/logger";
@@ -51,19 +51,15 @@ export class AuthService {
     await redis.set(cooldownKey, user, { ex: 10 });
 
     // ---- DB checks ----
-    const state: string = await UserService.getUserRegisterState(userId);
+    const state: UserRegistrationState = await UserService.getUserRegisterState(userId);
 
-    switch (state) {
-      case "registered":
-        logger.info("auth.login.success");
-        return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
+    if(state.isNeonUser && state.isStreamUser) {
+      return { type: "login", user, chatHistory: await ChatHistoryService.getHistory(userId) };
+    }
 
-      case "inconsistent_registration":
-        logger.warn("auth.registration.conflict");
-        return { type: "already_registered" };
-
-      case "unregistered":
-        break;
+    if(state.isNeonUser !== state.isStreamUser) {
+      logger.warn("auth.registration.conflict");
+      return { type: "already_registered" };
     }
 
     // ---- create new user ----

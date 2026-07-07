@@ -3,7 +3,7 @@ import { StreamChatService } from "./streamChatService";
 import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
 import { GeminiMessage } from "../utils/interfaces";
-import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse } from "../utils/types";
+import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse, UserRegistrationState } from "../utils/types";
 import { UserService } from "./userService";
 import { logger } from "../utils/logger";
 import { generateChatId } from "../utils/idGenerator";
@@ -26,10 +26,10 @@ export class ChatService {
     }
 
     // ---- verify user exists ---- //
-    const registrationState: string =
+    const state: UserRegistrationState =
       await UserService.getUserRegisterState(userId);
 
-    if (registrationState === "inconsistent_registration") {
+    if (state.isNeonUser !== state.isStreamUser) {
       logger.debug("chat.registration.inconsistent");
       return { type: "user_not_found" };
     }
@@ -55,10 +55,9 @@ export class ChatService {
     }
 
     // ---- verify user exists ---- //
-    const registrationState: string =
-      await UserService.getUserRegisterState(userId);
+    const state: UserRegistrationState = await UserService.getUserRegisterState(userId);
 
-    if (registrationState === "inconsistent_registration") {
+    if (state.isNeonUser !== state.isStreamUser) {
       logger.debug("chat.registration.inconsistent");
       return { type: "user_not_found" };
     }
@@ -110,10 +109,9 @@ export class ChatService {
     }
 
     // ---- verify user exists ---- //
-    const registrationState: string =
-      await UserService.getUserRegisterState(userId);
+    const state: UserRegistrationState = await UserService.getUserRegisterState(userId);
 
-    if (registrationState === "inconsistent_registration") {
+    if (state.isNeonUser !== state.isStreamUser) {
       logger.debug("chat.registration.inconsistent");
       return { type: "user_not_found" };
     }
