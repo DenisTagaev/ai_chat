@@ -100,7 +100,7 @@ cypress/screenshots/
 
 # Local development
 local-dev/
-
+scripts/
 
 # Redis dump & local data
 dump.rdb
