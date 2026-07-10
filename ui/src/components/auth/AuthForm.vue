@@ -46,7 +46,7 @@
                 name: data.user.name
             });
 
-            await router.push('/chat');
+            await router.push('/chats');
         } catch {
             error.value = 'Something went wrong. Please try again.';
         } finally {
