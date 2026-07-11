@@ -2,10 +2,12 @@
     import { computed, defineAsyncComponent, onMounted } from 'vue';
     import { useRoute, useRouter } from 'vue-router';
     import { useUserStore } from '../../stores/user';
+    import { useChatSessionsStore } from '../../stores/chatSessions';
 
     import Loader from '../Loader.vue'
 
     const userStore = useUserStore();
+    const chatSessionsStore = useChatSessionsStore();
 
     const router = useRouter();
     const route = useRoute();
@@ -14,6 +16,10 @@
         const value = route.params.chatId;
 
         return typeof value === 'string' ? value : null;
+    });
+
+    const hasChats = computed<boolean>((): boolean => {
+        return chatSessionsStore.sessions.length > 0;
     });
 
     onMounted(async (): Promise<void> => {
@@ -37,7 +43,7 @@
     <section class="flex flex-col h-screen bg-slate-900 text-slate-50">
         <Suspense>
             <template #default>
-                <ChatEmpty v-if="!selectedChatId" :has-chats="true"/>
+                <ChatEmpty v-if="!selectedChatId" :has-chats="hasChats"/>
                 <ChatContainer v-else/>
             </template>
 

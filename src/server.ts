@@ -38,7 +38,7 @@ if (isTestEnv) {
         return req.headers["x-request-id"] || crypto.randomUUID();
       },
 
-      customLogLevel: (res, err): "error" | "warn" | "info" => {
+      customLogLevel: (req, res, err): "error" | "warn" | "info" => {
         if (err) return "error";
 
         const statusCode: number = res.statusCode ?? 200;
