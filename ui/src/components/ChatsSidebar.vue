@@ -3,7 +3,7 @@
     import { computed } from "vue";
     import { useRoute } from "vue-router";
     import { storeToRefs } from "pinia";
-
+    import { GiNotebook } from "oh-vue-icons/icons";
     import { useChatSessionsStore } from "../stores/chatSessions";
 
     const emit = defineEmits<{
@@ -43,11 +43,18 @@
     aria-label="Chat history"
     role="navigation"
   >
+    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:*:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 ">
+      <GiNotebook class="text-slate-700 dark:text-slate-200" />
+      New Chat
+    </button>
     <header class="p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
-      <h2 class="text-lg font-semibold tracking-tight text-shadow-slate-800 dark:text-slate-200">Chats</h2>
+      <h2 class="text-lg font-semibold tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
     </header>
 
-    <ul class="flex-1 overflow-y-auto p-2 space-y-2">
+    <p v-if="!sessions.length" class="p-4 text-medium italic text-slate-500 dark:text-slate-400">
+      No recent chats available.
+    </p>
+    <ul v-else class="flex-1 overflow-y-auto p-2 space-y-2">
       <li v-for="session in sessions" :key="session.chatId">
         <button
           type="button"

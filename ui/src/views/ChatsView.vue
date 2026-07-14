@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import {
-        computed,
         defineAsyncComponent,
         onMounted,
     } from "vue";
@@ -34,10 +33,6 @@
     const chatStore = useChatStore();
 
     const { sessions } = storeToRefs(chatSessionsStore);
-
-    const hasSessions = computed((): boolean => {
-        return sessions.value.length > 0;
-    });
 
     const handleSelectChat = async (chatId: string): Promise<void> => {
         if (chatId === route.params.id) {
@@ -75,25 +70,8 @@
     <Header />
 
     <div class="flex-1 flex overflow-hidden">
-      <main class="flex-1 overflow-hidden">
-        <Suspense>
-          <template #default>
-            <ChatWindow />
-          </template>
-
-          <template #fallback>
-            <Loader
-              :show="true"
-              overlay
-              label="Loading chat..."
-            />
-          </template>
-        </Suspense>
-      </main>
-
       <aside
-        v-if="hasSessions"
-        class="hidden lg:block w-80 shrink-0"
+        class="w-80 shrink-0"
       >
         <Suspense>
           <template #default>
@@ -109,6 +87,22 @@
           </template>
         </Suspense>
       </aside>
+
+      <main class="flex-1 overflow-hidden">
+        <Suspense>
+          <template #default>
+            <ChatWindow />
+          </template>
+
+          <template #fallback>
+            <Loader
+              :show="true"
+              overlay
+              label="Loading chat..."
+            />
+          </template>
+        </Suspense>
+      </main>
     </div>
   </div>
 </template>
