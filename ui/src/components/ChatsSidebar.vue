@@ -3,7 +3,6 @@
     import { computed } from "vue";
     import { useRoute } from "vue-router";
     import { storeToRefs } from "pinia";
-    import { GiNotebook } from "oh-vue-icons/icons";
     import { useChatSessionsStore } from "../stores/chatSessions";
 
     const emit = defineEmits<{
@@ -44,7 +43,7 @@
     role="navigation"
   >
     <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:*:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 ">
-      <GiNotebook class="text-slate-700 dark:text-slate-200" />
+      <OhVueIcon name="gi-notebook" class="text-slate-700 dark:text-slate-200" />
       New Chat
     </button>
     <header class="p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
