@@ -1,6 +1,10 @@
 <script setup lang="ts">
     import { ref } from 'vue';
 
+    const props = defineProps<{
+        disabled?: boolean;
+    }>();
+
     const emit = defineEmits<{
         (e: 'send', message: string): void
     }>();
@@ -37,21 +41,26 @@
 </script>
 
 <template>
-    <section class="border-t border-gray-400 p-3 bg-slate-700 flex">
-        <div class="flex items-end gap-2">
-            <textarea
-                v-model="input"
-                rows="1"
-                placeholder="Send message to AI"
-                @keydown="handleKeyDown"
-                class="flex-1 resize-none px-3 py-2 rounded-md bg-slate-500 text-white focus:outline-none"
-            />
-            <button
-                @click="sendMessage"
-                :disabled="!canSend()"
-                class="ml-2 px-4 py-2 bg-blue-700 hover:bg-blue-500 rounded-md disabled:opacity-25 disabled:cursor-not-allowed text-white">
-                Send
-            </button>
+    <section class="shrink-0 border-t border-gray-400 p-3 bg-slate-800 flex">
+        <div class="mx-auto max-w-4xl">
+            <div class="relative">
+                <label for="new-message" class="sr-only">New message</label>
+                <textarea
+                    v-model="input"
+                    id="new-message"
+                    rows="1"
+                    placeholder="Message AI assistant"
+                    @keydown="handleKeyDown"
+                    aria-label="New message"
+                    class="w-full font-mono resize-none rounded-xl border border-slate-600 bg-slate-500 px-5 py-4 pr-16 focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 block sm:text-sm text-white focus:outline-none "
+                />
+                <button
+                    @click="sendMessage"
+                    :disabled="!canSend()"
+                    class="absolute bottom-2 right-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 hover:bg-blue-500 disabled:opacity-25 disabled:cursor-not-allowed text-white">
+                    <OhVueIcon name="bi-send-plus" class="h-6 w-6" />
+                </button>
+            </div>
         </div>
     </section>
 </template>
