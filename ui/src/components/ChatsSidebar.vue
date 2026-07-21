@@ -47,7 +47,7 @@
       New Chat
     </button>
     <header class="p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
-      <h2 class="text-lg font-semibold tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
+      <h2 class="text-lg font-semibold font-mono tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
     </header>
 
     <p v-if="!sessions.length" class="p-4 text-medium italic text-slate-500 dark:text-slate-400">
