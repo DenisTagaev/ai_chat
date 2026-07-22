@@ -33,14 +33,18 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
     }
   }
 
-  async function createSession(firstMessage: string): Promise<void> {
-    if (!userStore.userId) return;
+  async function createSession(firstMessage: string): Promise<ChatSession> {
+    if (!userStore.userId) {
+      throw new Error("User Is not authenticated");
+    };
 
     create();
 
     try {
       const data = await sessionsService.createSession(userStore.userId, firstMessage, controller.value?.signal);
       sessions.value.unshift(data);
+
+      return data;
     } catch (error: unknown) {
       const errorResult: ApiErrorResult = handleApiError(
         error,
@@ -50,6 +54,8 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
       if (errorResult.message) {
         console.error(errorResult.message);
       }
+
+      throw error;
     } finally {
       abortRequest();
     }

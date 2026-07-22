@@ -18,7 +18,7 @@
       {{
         hasChats
           ? "Select a conversation from the sidebar to continue chatting."
-          : "Start your first conversation using the Send Message field."
+          : "Start your first conversation using the New Chat button in the sidebar."
       }}
     </p>
   </div>

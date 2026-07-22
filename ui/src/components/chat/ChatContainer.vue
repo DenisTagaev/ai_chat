@@ -6,7 +6,6 @@
     import ChatMessageList from './ChatMessageList.vue'
     import ChatTypingIndicator from './ChatTypingIndicator.vue'
     import ChatError from './ChatError.vue'
-    import NewMessage from './NewMessage.vue'
     import { useAutoScroll } from '../../composables/useAutoScroll';
 
     const route = useRoute();
@@ -50,5 +49,4 @@
             <ChatTypingIndicator v-if="chatStore.isLoading" />
         </div>
     </div>
-    <NewMessage v-if="!chatStore.isInitializing" @send="chatStore.sendAIRequest(chatId, $event)"/>
 </template>
