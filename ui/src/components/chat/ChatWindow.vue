@@ -62,8 +62,20 @@
                         <ChatEmpty v-if="!selectedChatId" :has-chats="hasChats"/>
                         <ChatContainer v-else/>
                     </div>
-
-                    <NewMessage :disabled="chatStore.isLoading" @send="handleSend"/>
+                    <Transition
+                        name="fade"
+                        enter-active-class="transition-opacity duration-300"
+                        enter-from-class="opacity-0"
+                        enter-to-class="opacity-100"
+                        leave-active-class="transition-opacity duration-300"
+                        leave-from-class="opacity-100"
+                        leave-to-class="opacity-0"
+                    >
+                        <NewMessage
+                            v-if="sessionStore.startNewChat || selectedChatId"
+                            :disabled="chatStore.isLoading"
+                            @send="handleSend"/>
+                    </Transition>
                 </div>
             </template>
 

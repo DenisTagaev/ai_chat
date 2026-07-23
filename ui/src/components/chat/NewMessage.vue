@@ -52,7 +52,7 @@
                     placeholder="Message AI assistant"
                     @keydown="handleKeyDown"
                     aria-label="New message"
-                    class="w-full font-mono resize-none rounded-xl border border-slate-600 bg-slate-500 px-5 py-4 pr-16 focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 block sm:text-sm text-white focus:outline-none "
+                    class="w-full font-mono resize-none rounded-xl border border-slate-600 bg-slate-500 px-5 py-4 pr-16 focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 focus:placeholder:text-white block sm:text-sm text-white focus:outline-none "
                 />
                 <button
                     @click="sendMessage"
