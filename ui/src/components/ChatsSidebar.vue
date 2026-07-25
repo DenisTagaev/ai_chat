@@ -4,35 +4,41 @@
     import { useRoute } from "vue-router";
     import { storeToRefs } from "pinia";
     import { useChatSessionsStore } from "../stores/chatSessions";
+    import { useChatStore } from "../stores/chat";
 
     const emit = defineEmits<{
-        (e: "select", chatId: string): void;
+      (e: "select", chatId: string): void;
     }>();
 
     const route = useRoute();
     const chatSessionsStore = useChatSessionsStore();
+    const chatStore = useChatStore()
 
     const { sessions } = storeToRefs(chatSessionsStore);
 
     const currentChatId = computed((): string => {
-        return String(route.params.id ?? "");
+      return String(route.params.id ?? "");
     });
 
     const handleSelect = (chatId: string): void => {
-        if (chatId === currentChatId.value) {
-            return;
-        }
+      if (chatId === currentChatId.value) {
+          return;
+      }
 
-        emit("select", chatId);
+      emit("select", chatId);
+    };
+
+    const handleNewChat = (): void => {
+      chatStore.showNewChatArea();
     };
 
     const formatDate = (isoDate: string): string => {
-    const date: Date = new Date(isoDate);
+      const date: Date = new Date(isoDate);
 
-    return new Intl.DateTimeFormat(undefined, {
+      return new Intl.DateTimeFormat(undefined, {
         month: "short",
         day: "numeric",
-    }).format(date);
+      }).format(date);
     };
 </script>
 
@@ -42,7 +48,7 @@
     aria-label="Chat history"
     role="navigation"
   >
-    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:*:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 ">
+    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:*:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 " @click="handleNewChat">
       <OhVueIcon name="gi-notebook" class="text-slate-700 dark:text-slate-200" />
       New Chat
     </button>

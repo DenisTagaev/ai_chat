@@ -17,6 +17,15 @@ export const useChatStore = defineStore("chat",  () => {
     const isInitializing = ref(false);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
+    const isCreatingChat = ref(false);
+
+    const showNewChatArea = ():void => {
+      isCreatingChat.value = true;
+    };
+
+    const hideNewChatArea = ():void => {
+      isCreatingChat.value = false;
+    };
 
     const userStore = useUserStore();
 
@@ -99,9 +108,12 @@ export const useChatStore = defineStore("chat",  () => {
        messages: readonly(messages),
        isLoading: readonly(isLoading),
        isInitializing: readonly(isInitializing),
+       isCreatingChat: readonly(isCreatingChat),
        error: readonly(error),
        loadChatHistory,
        sendAIRequest,
        reset,
+       showNewChatArea,
+       hideNewChatArea,
      };
 });

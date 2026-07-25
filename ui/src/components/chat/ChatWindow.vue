@@ -64,15 +64,15 @@
                     </div>
                     <Transition
                         name="fade"
-                        enter-active-class="transition-opacity duration-300"
+                        enter-active-class="transition-opacity duration-600"
                         enter-from-class="opacity-0"
                         enter-to-class="opacity-100"
-                        leave-active-class="transition-opacity duration-300"
+                        leave-active-class="transition-opacity duration-600"
                         leave-from-class="opacity-100"
                         leave-to-class="opacity-0"
                     >
                         <NewMessage
-                            v-if="sessionStore.startNewChat || selectedChatId"
+                            v-if="chatStore.isCreatingChat || selectedChatId"
                             :disabled="chatStore.isLoading"
                             @send="handleSend"/>
                     </Transition>
