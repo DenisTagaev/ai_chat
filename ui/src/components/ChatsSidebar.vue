@@ -1,4 +1,3 @@
-<!-- src/components/chat/ChatSidebar.vue -->
 <script setup lang="ts">
     import { computed } from "vue";
     import { useRoute } from "vue-router";
@@ -28,8 +27,10 @@
       emit("select", chatId);
     };
 
-    const handleNewChat = (): void => {
+    const handleNewChat = (event: MouseEvent): void => {
       chatStore.showNewChatArea();
+
+      (event.currentTarget as HTMLButtonElement).blur();
     };
 
     const formatDate = (isoDate: string): string => {
@@ -45,21 +46,20 @@
 <template>
   <nav
     class="h-full flex flex-col bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-    aria-label="Chat history"
-    role="navigation"
+    aria-label="Chats history"
   >
-    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:*:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 " @click="handleNewChat">
+    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:bg-slate-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 " type="button" @click="handleNewChat">
       <OhVueIcon name="gi-notebook" class="text-slate-700 dark:text-slate-200" />
       New Chat
     </button>
     <header class="p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
-      <h2 class="text-lg font-semibold font-mono tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
+      <h2 id="recent-chats-heading" class="text-lg font-semibold font-mono tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
     </header>
 
     <p v-if="!sessions.length" class="p-4 text-medium italic text-slate-500 dark:text-slate-400">
       No recent chats available.
     </p>
-    <ul v-else class="flex-1 overflow-y-auto p-2 space-y-2">
+    <ul area-labelledby="recent-chats-heading" v-else class="flex-1 overflow-y-auto p-2 space-y-2">
       <li v-for="session in sessions" :key="session.chatId">
         <button
           type="button"
