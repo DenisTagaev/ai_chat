@@ -65,7 +65,7 @@
 
 <template>
     <section class=" flex shrink-0 border-t p-3 border-gray-400 bg-slate-100 dark:bg-slate-800">
-        <div class="mx-auto max-w-4xl">
+        <div class="mx-auto w-full max-w-xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl">
             <div class="relative" ref="clickTarget">
                 <label for="new-message" class="sr-only">New message</label>
                 <textarea

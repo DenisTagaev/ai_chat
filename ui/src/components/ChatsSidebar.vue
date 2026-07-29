@@ -16,7 +16,7 @@
     const { sessions } = storeToRefs(chatSessionsStore);
 
     const currentChatId = computed((): string => {
-      return String(route.params.id ?? "");
+      return String(route.params.chatId ?? "");
     });
 
     const handleSelect = (chatId: string): void => {
