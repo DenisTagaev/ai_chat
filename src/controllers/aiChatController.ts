@@ -11,7 +11,7 @@ export async function createChat(req: Request, res: Response): Promise<any> {
   const { message, userId } = req.body;
 
   try {
-    const chatResponse: ChatSessionResponse = await ChatService.createChat(message, userId);
+    const chatResponse: ChatSessionResponse = await ChatService.createChat(userId, message);
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: any) {
     req.log.error({ err }, "chat.create_request.error:");
