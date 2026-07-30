@@ -21,7 +21,9 @@ export const sessionsService = {
   async createSession(userId: string, firstMessage: string, signal?: AbortSignal): Promise<ChatSession> {
     const { data } = await api.post<ChatSession>("/", {
       userId,
-      firstMessage,
+      firstMessage
+    },
+    {
       signal,
     });
     return data;
