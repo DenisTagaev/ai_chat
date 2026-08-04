@@ -5,7 +5,7 @@ import { withTimeout } from "../utils/timeout";
 import { TimeoutError } from "redis";
 
 export class StreamChatService {
-  private static readonly ai_user = "ai_bot";
+  private static readonly ai_user = "ai_assistant";
   private static readonly streamClient: StreamChat = (() => {
     if (!process.env.STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
       throw new Error("Stream API credentials are not defined");
@@ -85,13 +85,17 @@ export class StreamChatService {
   }
 
   /** Send an AI message to the user's channel */
-  static async sendMessageToStream(
-    senderId: string,
-    chatId: string,
-    message: string,
-  ): Promise<SendMessageAPIResponse> {
+  static async sendMessageToStream({
+    streamUserId,
+    streamChannelId,
+    message
+  }: {
+    streamUserId: string;
+    streamChannelId: string;
+    message: string;
+  }): Promise<SendMessageAPIResponse> {
     if (typeof message !== "string" || !message.trim()) {
-      if (senderId === this.ai_user) {
+      if (streamUserId === this.ai_user) {
         logger.warn("stream.ai.message_invalid");
         throw new Error("AI Error");
       } else {
@@ -102,34 +106,34 @@ export class StreamChatService {
 
     try {
       const channel: Channel = await this.getOrCreateChatChannel(
-        senderId,
-        chatId,
+        streamUserId,
+        streamChannelId,
       );
 
       return await withTimeout(
         channel.sendMessage({
           text: message,
-          user_id: senderId,
+          user_id: streamUserId,
         }),
         5000,
         "Stream message send",
       );
     } catch (err) {
       if (err instanceof TimeoutError) {
-        logger.warn({ chatId, senderId }, "stream.message_send.timeout");
+        logger.warn({ chatId: streamChannelId, senderId: streamUserId }, "stream.message_send.timeout");
       } else {
-        logger.error({ chatId, senderId, err }, "stream.message_send.fail");
+        logger.error({ chatId: streamChannelId, senderId: streamUserId, err }, "stream.message_send.fail");
       }
       throw err;
     }
   }
 
   static sendUserMessage(userId: string, chatId: string, message: string) {
-    return this.sendMessageToStream(chatId, userId, message);
+    return this.sendMessageToStream({ streamUserId: userId, streamChannelId: chatId, message });
   }
 
   static sendAiMessage(chatId: string, message: string) {
-    return this.sendMessageToStream(chatId, this.ai_user, message);
+    return this.sendMessageToStream({ streamUserId: this.ai_user, streamChannelId: chatId, message });
   }
 
   /** @internal testing only */

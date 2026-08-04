@@ -94,7 +94,7 @@ describe("StreamChatService", () => {
 
     expect(mockClient.channel).toHaveBeenCalledWith("messaging", "chat-123", {
       members: ["123"],
-      created_by_id: "ai_bot",
+      created_by_id: "ai_assistant",
     });
 
     expect(mockChannel.create).toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe("StreamChatService", () => {
 
     expect(mockChannel.sendMessage).toHaveBeenCalledWith({
       text: "Hello AI",
-      user_id: "ai_bot",
+      user_id: "ai_assistant",
     });
 
     expect(message).toEqual({ success: true });
