@@ -35,14 +35,14 @@
     const { sessions } = storeToRefs(chatSessionsStore);
 
     const handleSelectChat = async (chatId: string): Promise<void> => {
-        if (chatId === route.params.id) {
+        if (chatId === route.params.chatId) {
             return;
         }
 
         await router.push({
-            name: "chat",
+            name: "AI chat",
             params: {
-            id: chatId,
+              chatId,
             },
         });
     };
@@ -52,7 +52,7 @@
             await chatSessionsStore.fetchSessions();
         }
 
-        await chatStore.loadChatHistory(route.params.id as string);
+        await chatStore.loadChatHistory(route.params.chatId as string);
     };
 
     onMounted(async (): Promise<void> => {
@@ -61,7 +61,7 @@
 
     onBeforeRouteUpdate(async (to): Promise<void> => {
         chatStore.reset();
-        await chatStore.loadChatHistory(to.params.id as string);
+        await chatStore.loadChatHistory(to.params.chatId as string);
     });
 </script>
 
