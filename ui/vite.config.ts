@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from "vite-plugin-pwa";
 import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
     tailwindcss(),
@@ -42,6 +42,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        navigateFallbackDenylist: [/^\/api\//],
         globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
 
         runtimeCaching: [
@@ -50,6 +51,7 @@ export default defineConfig({
             handler: "NetworkFirst",
             options: {
               cacheName: "pages",
+              networkTimeoutSeconds: 3,
             },
           },
 
@@ -75,8 +77,20 @@ export default defineConfig({
             options: {
               cacheName: "images",
               expiration: {
-                maxEntries: 60,
+                maxEntries: 100,
                 maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+            },
+          },
+
+          {
+            urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 365 * 24 * 60 * 60,
               },
             },
           },
@@ -84,9 +98,6 @@ export default defineConfig({
           {
             urlPattern: /\/api\//,
             handler: "NetworkOnly",
-            options: {
-              cacheName: "api",
-            },
           },
         ],
       },
@@ -94,14 +105,15 @@ export default defineConfig({
   ],
   build: {
     minify: "esbuild",
-    cssMinify: true,
-    sourcemap: false,
+    sourcemap: "hidden",
 
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("vue")) return "vue-vendor";
+            if (id.includes("/vue/") || id.includes("@vue/"))
+              return "vue-vendor";
+
             if (id.includes("axios")) return "http-vendor";
             return "vendor";
           }
@@ -112,14 +124,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
   },
   esbuild: {
-    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
-  },
-
-  server: {
-    hmr: true,
+    drop: mode === "production" ? ["console", "debugger"] : [],
   },
 
   preview: {
     port: 4173,
   },
-});
+}));
