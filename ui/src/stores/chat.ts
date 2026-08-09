@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
-import { chatService, type MessageState } from "../services/chatService";
+import { chatService, type ChatHistoryResponse, type MessageState } from "../services/chatService";
 import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
 import { useAbortController } from "../composables/useAbortController";
 
@@ -38,7 +38,7 @@ export const useChatStore = defineStore("chat",  () => {
         create();
 
         try {
-            const data = await chatService.getChatHistory(
+            const data: ChatHistoryResponse = await chatService.getChatHistory(
               chatId,
               userStore.userId,
               controller.value?.signal,

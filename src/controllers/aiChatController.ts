@@ -3,6 +3,7 @@ import { ChatService } from "../services/chatService";
 import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse } from "../utils/types";
 import { ChatResultMapper } from "../middleware/chatResultMapper";
 import { ChatHistoryService } from "../services/chatHistoryService";
+import { ChatSelect } from "../db/schemas";
 
 // ------------------------------------------
 // POST /ai-chats
@@ -50,11 +51,14 @@ export async function getChatHistory(
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const history: {
-      [x: string]: any;
-    }[] = await ChatHistoryService.getHistory(chatId);
+    const history: ChatSelect[] = await ChatHistoryService.getHistory(chatId);
 
-    return res.status(200).json({ history });
+    res.status(200).json({
+      messages: history.map((item) => ({
+        message: item.message,
+        reply: item.reply,
+      })),
+    });
   } catch (err: any) {
     req.log.error({ err }, "chat.history_retrieve.error:");
     return res.status(500).json({ error: "Internal Server Error" });
