@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed } from "vue";
-    import { useRoute } from "vue-router";
+    import { useRoute, useRouter } from "vue-router";
     import { storeToRefs } from "pinia";
     import { useChatSessionsStore } from "../stores/chatSessions";
     import { useChatStore } from "../stores/chat";
@@ -10,6 +10,7 @@
     }>();
 
     const route = useRoute();
+    const router = useRouter();
     const chatSessionsStore = useChatSessionsStore();
     const chatStore = useChatStore()
 
@@ -27,9 +28,10 @@
       emit("select", chatId);
     };
 
-    const handleNewChat = (event: MouseEvent): void => {
+    const handleNewChat = async(event: MouseEvent): Promise<void> => {
       chatStore.showNewChatArea();
 
+      await router.push({ name: "Chats List" });
       (event.currentTarget as HTMLButtonElement).blur();
     };
 

@@ -20,6 +20,8 @@ export const useChatStore = defineStore("chat",  () => {
     const isCreatingChat = ref(false);
 
     const showNewChatArea = ():void => {
+      if(isCreatingChat.value) return;
+
       isCreatingChat.value = true;
     };
 
