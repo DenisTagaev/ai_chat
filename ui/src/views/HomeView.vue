@@ -16,23 +16,48 @@
     <Suspense>
       <template #default>
         <section
-          class="p-8 bg-gray-700 rounded-lg shadow-lg w-full max-w-md"
-          aria-labelledby="page-login"
+          class="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900/80 backdrop-blur-xl shadow-2xl"
+          aria-labelledby="page-title"
         >
-          <img
-            :src="chatImage"
-            alt="AI assistant avatar"
-            class="mx-auto w-24 h-24 mb-4"
-            loading="lazy"
-            decoding="async"
-          />
-          <h1
-            id="page-title"
-            class="text-2xl font-semibold mb-4 text-center"
-          >
-            Welcome to your personal AI assistant
-          </h1>
-          <AuthForm />
+          <div class="border-b border-dashed border-slate-700 px-8 py-6">
+            <div class="mb-3 flex items-center justify-center">
+              <div class="rounded-full border border-emerald-500/30 bg-slate-800 p-4">
+                <img
+                  :src="chatImage"
+                  alt="AI assistant avatar"
+                  class="h-24 w-24"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
+
+            <div class="text-center">
+              <div class="mb-4 flex items-center justify-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <p
+                  class="font-mono text-sm uppercase tracking-[0.35em] text-emerald-400"
+                >
+                  AI CORE ONLINE
+                </p>
+              </div>
+
+              <h1
+                id="page-title"
+                class="text-3xl font-semibold tracking-tight text-slate-100"
+              >
+                Personal AI Assistant
+              </h1>
+
+              <p class="mt-3 text-sm text-slate-400">
+                Authenticate to start a secure conversation.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-8">
+              <AuthForm />
+          </div>
         </section>
       </template>
 

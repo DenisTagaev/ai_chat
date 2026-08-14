@@ -73,7 +73,7 @@
     />
 
     <AuthButton :loading="loading">
-      {{ loading ? 'Connecting...' : 'Start chat' }}
+      {{ loading ? 'Connecting...' : 'Initialize session' }}
     </AuthButton>
 
     <AuthError :message="error" />
