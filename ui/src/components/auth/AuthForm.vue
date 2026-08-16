@@ -58,6 +58,7 @@
 <template>
   <form @submit.prevent="submit" novalidate>
     <AuthInput
+      id="name"
       v-model="name"
       placeholder="Name"
       autocomplete="name"
@@ -65,6 +66,7 @@
     />
 
     <AuthInput
+      id="email"
       v-model="email"
       type="email"
       placeholder="Email"

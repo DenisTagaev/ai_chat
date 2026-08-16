@@ -21,7 +21,7 @@
         >
           <div class="border-b border-dashed border-slate-700 px-8 py-6">
             <div class="mb-3 flex items-center justify-center">
-              <div class="rounded-full border border-emerald-500/30 bg-slate-800 p-4">
+              <div class="rounded-full border border-emerald-500 bg-slate-800 p-4">
                 <img
                   :src="chatImage"
                   alt="AI assistant avatar"
@@ -34,9 +34,9 @@
 
             <div class="text-center">
               <div class="mb-4 flex items-center justify-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <p
-                  class="font-mono text-sm uppercase tracking-[0.35em] text-emerald-400"
+                  class="font-mono text-sm uppercase tracking-[0.35em] text-emerald-500"
                 >
                   AI CORE ONLINE
                 </p>
