@@ -9,6 +9,7 @@
     aria-live="polite"
     role="alert"
   >
+    <OhVueIcon name="md-error-outline-round" class="mr-2"/>
     {{ message }}
   </p>
 </template>
