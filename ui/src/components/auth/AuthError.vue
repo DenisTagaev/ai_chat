@@ -5,7 +5,7 @@
 <template>
   <p
     v-if="message"
-    class="text-center text-rose-600 mt-3"
+    class="text-center font-mono tracking-wide outline-none text-rose-600 mt-3"
     aria-live="polite"
     role="alert"
   >
