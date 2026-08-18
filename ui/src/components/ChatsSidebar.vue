@@ -62,15 +62,36 @@
       </span>
     </header>
 
-    <p v-if="!sessions.length" class="p-4 text-medium italic text-slate-500 dark:text-slate-400">
+    <p v-if="!sessions.length" class="p-4 text-medium text-center italic text-slate-500 dark:text-slate-400">
       No recent chats available.
     </p>
-    <ul aria-labelledby="recent-chats-heading" v-else class="flex-1 overflow-y-auto p-2 space-y-2">
-      <li v-for="session in sessions" :key="session.chatId">
+
+    <ul aria-labelledby="recent-chats-heading" v-else class="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
+      <li v-for="session in sessions" :key="session.chatId" class="min-w-0">
         <button
           type="button"
-          class="w-full text-left px-3 py-3 rounded-lg bg-transparent transition-colors duration-200 hover:bg-slate-200 dark:hover:bg-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800"
-          :class="{
+          class="
+            group
+            relative
+            flex
+            flex-col
+            w-full
+            min-w-0
+            text-left
+            px-3
+            py-3
+            rounded-md
+            bg-transparent
+            transition-colors
+            duration-200
+            hover:bg-slate-200
+            dark:hover:bg-slate-600
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500/70
+            focus:ring-inset-1
+            focus:ring-inset-sky-600"
+            :class="{
             'bg-slate-200 text-slate-800 ring-1 ring-blue-500/70 shadow-sm dark:bg-slate-800 dark:text-slate-200':
               session.chatId === currentChatId,
           }"
@@ -79,13 +100,28 @@
           "
           @click="handleSelect(session.chatId)"
         >
-          <div class="font-medium truncate text-sm">
-            {{ session.title }}
-          </div>
 
-          <div class="text-xs text-slate-600 mt-1 dark:text-slate-400">
+          <span
+            v-if="session.chatId === currentChatId"
+            class="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-sky-600"
+            aria-hidden="true"
+          />
+
+          <span
+            class="min-w-0 pr-2 font-mono font-medium truncate text-sm"
+            :class="
+              session.chatId === currentChatId
+                ? 'text-blue-500 group-hover:text-blue-300'
+                : 'text-slate-600 dark:text-slate-300 group-hover:text-slate-100'
+            "
+          >
+            {{ session.title }}
+          </span>
+
+          <span class="font-mono tracking-wide text-xs text-slate-600 mt-1 dark:text-slate-400 group-hover:text-slate-200">
             {{ formatDate(session.updatedAt) }}
-          </div>
+          </span>
+
         </button>
       </li>
     </ul>
