@@ -47,21 +47,25 @@
 
 <template>
   <nav
-    class="h-full flex flex-col bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
+    class="h-full flex flex-col min-h-0 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
     aria-label="Chats history"
   >
-    <button class="px-3 mx-2 py-2 text-left rounded-md border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:bg-slate-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 " type="button" @click="handleNewChat">
-      <OhVueIcon name="gi-notebook" class="text-slate-700 dark:text-slate-200" />
-      New Chat
+    <button class="group flex w-full items-center gap-2 px-3 py-2 text-left font-mono font-semibold tracking-wider transition-colors border-slate-700 dark:border-slate-200 backdrop-blur-lg hover:bg-slate-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 " type="button" @click="handleNewChat">
+      <OhVueIcon name="gi-notebook" class="h-5 w-5 shrink-0 transition-transform text-slate-700 dark:text-slate-200 group-hover:scale-120" aria-hidden="true"/>
+      <span >New Chat</span>
     </button>
-    <header class="p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
-      <h2 id="recent-chats-heading" class="text-lg font-semibold font-mono tracking-tight text-shadow-slate-800 dark:text-slate-200">Recent Chats</h2>
+
+    <header class="flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg">
+      <h2 id="recent-chats-heading" class="text-lg font-semibold font-mono tracking-wide uppercase text-shadow-slate-800 dark:text-slate-200">Chats Log</h2>
+      <span class="font-mono text-slate-500" aria-hidden="true">
+        {{ sessions.length }}
+      </span>
     </header>
 
     <p v-if="!sessions.length" class="p-4 text-medium italic text-slate-500 dark:text-slate-400">
       No recent chats available.
     </p>
-    <ul area-labelledby="recent-chats-heading" v-else class="flex-1 overflow-y-auto p-2 space-y-2">
+    <ul aria-labelledby="recent-chats-heading" v-else class="flex-1 overflow-y-auto p-2 space-y-2">
       <li v-for="session in sessions" :key="session.chatId">
         <button
           type="button"
