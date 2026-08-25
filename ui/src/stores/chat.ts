@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { readonly, ref } from "vue";
 import { useUserStore } from "./user";
-import { chatService, type ChatHistoryResponse, type MessageState } from "../services/chatService";
+import { useChatSessionsStore } from "./chatSessions";
+import { chatService, type ChatHistoryResponse, type MessageState, type SendMessageResponse } from "../services/chatService";
 import { handleApiError, type ApiErrorResult } from "../utils/apiErrorHandler";
 import { useAbortController } from "../composables/useAbortController";
 
@@ -30,6 +31,7 @@ export const useChatStore = defineStore("chat",  () => {
     };
 
     const userStore = useUserStore();
+    const chatSessionsStore = useChatSessionsStore();
 
     const loadChatHistory = async (chatId: string): Promise<void> => {
         if(!userStore.userId || !chatId) return;
@@ -81,14 +83,15 @@ export const useChatStore = defineStore("chat",  () => {
         create();
 
         try {
-            const data = await chatService.sendMessage(
+            const data: SendMessageResponse = await chatService.sendMessage(
               chatId,
               userStore.userId,
               message,
               controller.value?.signal
             );
-
             messages.value.push({ role: "model", content: data.reply });
+
+            chatSessionsStore.updateSession(chatId);
         } catch (err: unknown) {
             const errorResult: ApiErrorResult = handleApiError(err, 'Failed to send message');
 

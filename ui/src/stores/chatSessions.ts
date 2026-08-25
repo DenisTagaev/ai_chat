@@ -61,6 +61,22 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
     }
   }
 
+  const updateSession = (chatId: string): void => {
+    const session: ChatSession | undefined = sessions.value.find((session: ChatSession) => session.chatId === chatId);
+
+    if (!session) return;
+
+    session.updatedAt = new Date().toISOString();
+
+    // Move the recently updated chat to the top
+    const index: number = sessions.value.indexOf(session);
+
+    if (index > 0) {
+      sessions.value.splice(index, 1);
+      sessions.value.unshift(session);
+    }
+  };
+
   function reset() {
     sessions.value = [];
   }
@@ -69,6 +85,7 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
     sessions: readonly(sessions),
     fetchSessions,
     createSession,
+    updateSession,
     reset,
   };
 });
