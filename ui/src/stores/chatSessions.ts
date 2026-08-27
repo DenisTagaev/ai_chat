@@ -61,12 +61,12 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
     }
   }
 
-  const updateSession = (chatId: string): void => {
+  const updateSession = (chatId: string, updatedAt: string): void => {
     const session: ChatSession | undefined = sessions.value.find((session: ChatSession) => session.chatId === chatId);
 
     if (!session) return;
 
-    session.updatedAt = new Date().toISOString();
+    session.updatedAt = updatedAt;
 
     // Move the recently updated chat to the top
     const index: number = sessions.value.indexOf(session);

@@ -11,6 +11,7 @@ export interface ChatHistoryResponse {
 
 export interface SendMessageResponse {
   reply: string;
+  updatedAt: string;
 }
 
 export const chatService = {

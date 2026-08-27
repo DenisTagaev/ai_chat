@@ -91,7 +91,7 @@ export const useChatStore = defineStore("chat",  () => {
             );
             messages.value.push({ role: "model", content: data.reply });
 
-            chatSessionsStore.updateSession(chatId);
+            chatSessionsStore.updateSession(chatId, data.updatedAt);
         } catch (err: unknown) {
             const errorResult: ApiErrorResult = handleApiError(err, 'Failed to send message');
 
