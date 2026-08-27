@@ -27,9 +27,27 @@ export async function saveStreamChatMessageToDB(
   reply: string
 ) {
   return withTimeout(
-    db.insert(chats).values({ chatId, message, reply }),
+    db.transaction(async (tx) => {
+      await tx.insert(chats).values({
+        chatId,
+        message,
+        reply,
+      });
+
+      const [session]: { updatedAt: Date }[] = await tx
+        .update(chatsSessions)
+        .set({
+          updatedAt: new Date(),
+        })
+        .where(eq(chatsSessions.chatId, chatId))
+        .returning({
+          updatedAt: chatsSessions.updatedAt,
+        });
+
+      return session;
+    }),
     5000,
-    "CHATS INSERT call"
+    "CHATS INSERT call",
   );
 }
 

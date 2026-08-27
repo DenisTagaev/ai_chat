@@ -18,11 +18,11 @@ export type BaseChatResponse =
 
 export type ChatResponse =
   | BaseChatResponse
-  | { type: "success"; reply: string };
+  | { type: "success"; updatedAt: Date; reply: string };
 
 export type ChatSessionResponse =
   | BaseChatResponse
-  | { type: "success"; chatId: string };
+  | { type: "success"; updatedAt: Date; chatId: string };
 
 export type ChatSessionsListResponse =
   | BaseChatResponse

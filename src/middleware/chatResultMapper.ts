@@ -44,6 +44,7 @@ export class ChatResultMapper {
         if ("reply" in result) {
           return res.status(200).json({
             reply: result.reply,
+            updatedAt: "updatedAt" in result ? result.updatedAt : undefined,
           });
         }
 

@@ -81,8 +81,11 @@ export class ChatService {
       logger.debug({ chatId }, "chat.stream.message_sent");
 
       // ---- persist ---- //
-      await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
-      logger.debug({ chatId }, "chat.db.message_saved");
+      const updatedSession: { updatedAt: Date } = await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
+      logger.debug(
+        { chatId, updatedAt: updatedSession.updatedAt },
+        "chat.db.message_saved"
+      );
 
       await ChatHistoryService.addMessageToHistory(
         chatId,
@@ -91,7 +94,7 @@ export class ChatService {
       );
 
       logger.info({ userId, chatId }, "chat.session.created");
-      return { type: "success", chatId };
+      return { type: "success", updatedAt: updatedSession.updatedAt, chatId };
     } catch (error) {
       logger.error({ error }, "chat.session.creation_failed");
       return { type: "internal_error" };
@@ -144,13 +147,16 @@ export class ChatService {
       logger.debug({ chatId }, "chat.stream.message_sent");
 
       // ---- persist ---- //
-      await saveStreamChatMessageToDB(chatId, message, fullReply);
-      logger.debug({ chatId }, "chat.db.message_saved");
+      const updatedSession: { updatedAt: Date } = await saveStreamChatMessageToDB(chatId, message, fullReply);
+      logger.debug(
+        { chatId, updatedAt: updatedSession.updatedAt },
+        "chat.db.message_saved",
+      );
 
       // --- clear cache --- //
       await ChatHistoryService.addMessageToHistory(chatId, message, fullReply);
 
-      return { type: "success", reply: fullReply };
+      return { type: "success", updatedAt: updatedSession.updatedAt, reply: fullReply };
     } catch (error) {
       logger.error({ chatId, error }, "chat.message.generation_failed");
       return { type: "internal_error" };
