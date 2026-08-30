@@ -26,33 +26,31 @@ export async function persistChatMessage(
   message: string,
   reply: string
 ) {
-  return withTimeout(
-    db.transaction(async (tx) => {
-      await tx.insert(chats).values({
-        chatId,
-        message,
-        reply,
-      });
-
-      const [session]: { updatedAt: Date }[] = await tx
-        .update(chatsSessions)
-        .set({
-          updatedAt: new Date(),
-        })
-        .where(eq(chatsSessions.chatId, chatId))
-        .returning({
-          updatedAt: chatsSessions.updatedAt,
-        });
-
-      if (!session) {
-        throw new Error(`Chat session not found for chatId: ${chatId}`);
-      }
-
-      return session;
-    }),
+  await withTimeout(
+    db.insert(chats).values({ chatId, message, reply }),
     5000,
     "CHATS INSERT call",
   );
+
+  const [session] = await withTimeout(
+    db
+      .update(chatsSessions)
+      .set({
+        updatedAt: new Date(),
+      })
+      .where(eq(chatsSessions.chatId, chatId))
+      .returning({
+        updatedAt: chatsSessions.updatedAt,
+      }),
+    5000,
+    "CHAT SESSION UPDATE call",
+  );
+
+  if (!session) {
+    throw new Error(`Chat session not found: ${chatId}`);
+  }
+
+  return session;
 }
 
 export async function getStreamChatHistoryFromDB(chatId: string) {
