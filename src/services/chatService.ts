@@ -1,4 +1,4 @@
-import { createChatSession, getChatSessionsByUserId, saveStreamChatMessageToDB } from "../db/operations";
+import { createChatSession, getChatSessionsByUserId, persistChatMessage } from "../db/operations";
 import { StreamChatService } from "./streamChatService";
 import { ChatHistoryService } from "./chatHistoryService";
 import { geminiAiService } from "./geminiAiService";
@@ -81,7 +81,7 @@ export class ChatService {
       logger.debug({ chatId }, "chat.stream.message_sent");
 
       // ---- persist ---- //
-      const updatedSession: { updatedAt: Date } = await saveStreamChatMessageToDB(chatId, firstMessage, firstReply);
+      const updatedSession: { updatedAt: Date } = await persistChatMessage(chatId, firstMessage, firstReply);
       logger.debug(
         { chatId, updatedAt: updatedSession.updatedAt },
         "chat.db.message_saved"
@@ -147,7 +147,7 @@ export class ChatService {
       logger.debug({ chatId }, "chat.stream.message_sent");
 
       // ---- persist ---- //
-      const updatedSession: { updatedAt: Date } = await saveStreamChatMessageToDB(chatId, message, fullReply);
+      const updatedSession: { updatedAt: Date } = await persistChatMessage(chatId, message, fullReply);
       logger.debug(
         { chatId, updatedAt: updatedSession.updatedAt },
         "chat.db.message_saved",

@@ -21,7 +21,7 @@ export async function getNeonUserById(userId: string) {
 }
 
 // --- CHATS ---
-export async function saveStreamChatMessageToDB(
+export async function persistChatMessage(
   chatId: string,
   message: string,
   reply: string
@@ -43,6 +43,10 @@ export async function saveStreamChatMessageToDB(
         .returning({
           updatedAt: chatsSessions.updatedAt,
         });
+
+      if (!session) {
+        throw new Error(`Chat session not found for chatId: ${chatId}`);
+      }
 
       return session;
     }),
