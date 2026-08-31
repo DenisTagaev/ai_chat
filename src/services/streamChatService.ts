@@ -3,6 +3,7 @@ import { StreamUser } from "../utils/interfaces";
 import { logger } from "../utils/logger";
 import { withTimeout } from "../utils/timeout";
 import { TimeoutError } from "redis";
+import { serializeError } from "../utils/errorSerializer";
 
 export class StreamChatService {
   private static readonly ai_user = "ai_assistant";
@@ -27,11 +28,17 @@ export class StreamChatService {
         5000,
         "Stream user query",
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ id }, "stream.user_query.timeout");
       } else {
-        logger.error({ id, err }, "stream.user_query.fail");
+        logger.error(
+          {
+            id,
+            err: serializeError(err)
+          },
+          "stream.user_query.fail"
+        );
       }
       throw err;
     }
@@ -47,11 +54,17 @@ export class StreamChatService {
         3000,
         "Stream user upsert",
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ userId: user.id }, "stream.user_upsert.timeout");
       } else {
-        logger.error({ userId: user.id, err }, "stream.user_upsert.fail");
+        logger.error(
+          {
+            userId: user.id,
+            err: serializeError(err)
+          },
+          "stream.user_upsert.fail"
+        );
       }
       throw err;
     }
@@ -67,11 +80,17 @@ export class StreamChatService {
     try {
       await withTimeout(channel.create(), 3000, "Stream channel create");
       return channel;
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ chatId }, "stream.channel.create.timeout");
       } else {
-        logger.debug({ chatId, err }, "stream.channel.already_exists");
+        logger.debug(
+          {
+            chatId,
+            err: serializeError(err)
+          },
+          "stream.channel.already_exists"
+        );
       }
       throw err;
     }
@@ -118,11 +137,18 @@ export class StreamChatService {
         5000,
         "Stream message send",
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ chatId: streamChannelId, senderId: streamUserId }, "stream.message_send.timeout");
       } else {
-        logger.error({ chatId: streamChannelId, senderId: streamUserId, err }, "stream.message_send.fail");
+        logger.error(
+          {
+            chatId: streamChannelId,
+            senderId: streamUserId,
+            err: serializeError(err)
+          },
+          "stream.message_send.fail"
+        );
       }
       throw err;
     }

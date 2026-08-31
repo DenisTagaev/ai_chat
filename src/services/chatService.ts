@@ -7,6 +7,8 @@ import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse, UserRegist
 import { UserService } from "./userService";
 import { logger } from "../utils/logger";
 import { generateChatId } from "../utils/idGenerator";
+import { serializeError } from "../utils/errorSerializer";
+import { TimeoutError } from "../utils/timeout";
 export class ChatService {
   private static generateChatTitleFromMessage(message: string): string {
     const maxLength: number = 25;
@@ -35,12 +37,23 @@ export class ChatService {
     }
 
     try {
-     const chats = await getChatSessionsByUserId(userId);
+     const chats = (await getChatSessionsByUserId(userId))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
      logger.info({ userId, chatsCount: chats.length }, "chat.sessions.retrieved");
      return { type: "success", chats };
-    } catch (error) {
-      logger.error({ error, userId }, "chat.sessions.retrieval_failed");
+    } catch (error: unknown){
+      if (error instanceof TimeoutError) {
+        logger.warn({ userId }, "chat.sessions.retrieval_timeout");
+      } else{
+        logger.error(
+          {
+            error: serializeError(error),
+            userId
+          },
+          "chat.sessions.retrieval_failed"
+        );
+      }
       return { type: "internal_error" };
     }
   }
@@ -95,8 +108,17 @@ export class ChatService {
 
       logger.info({ userId, chatId }, "chat.session.created");
       return { type: "success", updatedAt: updatedSession.updatedAt, chatId };
-    } catch (error) {
-      logger.error({ error }, "chat.session.creation_failed");
+    } catch (error: unknown) {
+      if (error instanceof TimeoutError) {
+        logger.warn({ userId, chatId }, "chat.session.creation_timeout");
+      } else {
+        logger.error(
+          {
+            error: serializeError(error)
+          },
+          "chat.session.creation_failed"
+        );
+      }
       return { type: "internal_error" };
     }
   }
@@ -157,8 +179,18 @@ export class ChatService {
       await ChatHistoryService.addMessageToHistory(chatId, message, fullReply);
 
       return { type: "success", updatedAt: updatedSession.updatedAt, reply: fullReply };
-    } catch (error) {
-      logger.error({ chatId, error }, "chat.message.generation_failed");
+    } catch (error: unknown) {
+      if (error instanceof TimeoutError) {
+        logger.warn({ userId, chatId }, "chat.message.generation_timeout");
+      } else {
+        logger.error(
+          {
+            chatId,
+            error: serializeError(error)
+          },
+          "chat.message.generation_failed"
+        );
+      }
       return { type: "internal_error" };
     }
   }

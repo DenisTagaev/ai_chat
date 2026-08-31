@@ -3,6 +3,8 @@ import { getNeonUserById } from "../db/operations";
 import { StreamChatService } from "./streamChatService";
 import { UserRegistrationState } from "../utils/types";
 import { logger } from "../utils/logger";
+import { TimeoutError } from "../utils/timeout";
+import { serializeError } from "../utils/errorSerializer";
 
 
 export class UserService {
@@ -26,8 +28,12 @@ export class UserService {
         isNeonUser,
         isStreamUser
       };
-    } catch (err) {
-      logger.error({ err }, "user.service.fail");
+    } catch (err: unknown) {
+      if (err instanceof TimeoutError) {
+        logger.warn({ userId }, "user.service.timeout");
+      } else {
+        logger.error({ err: serializeError(err) }, "user.service.fail");
+      }
       throw err;
     }
   }

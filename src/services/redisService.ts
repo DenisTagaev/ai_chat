@@ -1,6 +1,8 @@
 import { Redis, SetCommandOptions } from "@upstash/redis";
 import { logger } from "../utils/logger";
 import { TimeoutError, withTimeout } from "../utils/timeout";
+import { serializeError } from "../utils/errorSerializer";
+
 export class RedisClient{
   private readonly client: Redis;
 
@@ -28,11 +30,17 @@ export class RedisClient{
         5000,
         "Redis GET call"
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ key, err }, "redis.get.timeout");
       } else {
-        logger.error({ key, err }, "redis.get.fail");
+        logger.error(
+          {
+            key,
+            err: serializeError(err)
+          },
+          "redis.get.fail"
+        );
       }
       throw err;
     }
@@ -49,11 +57,17 @@ export class RedisClient{
         5000,
         "Redis SET call"
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ key, err }, "redis.set.timeout");
       } else {
-        logger.error({ key, err }, "redis.set.fail");
+        logger.error(
+          {
+            key,
+            err: serializeError(err)
+          },
+          "redis.set.fail"
+        );
         throw err;
       }
     }
@@ -66,11 +80,17 @@ export class RedisClient{
         5000,
         "Redis DEL call"
       );
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TimeoutError) {
         logger.warn({ key, err }, "redis.del.timeout");
       } else {
-        logger.error({ key, err }, "redis.del.fail");
+        logger.error(
+          {
+            key,
+            err: serializeError(err)
+          },
+          "redis.del.fail"
+        );
       }
       throw err;
     }

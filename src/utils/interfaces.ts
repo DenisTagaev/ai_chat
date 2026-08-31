@@ -1,8 +1,8 @@
 export interface StreamUser {
-    id: string | false;
-    email: string
-    name: string;
-    role?: string;
+  id: string | false;
+  email: string;
+  name: string;
+  role?: string;
 }
 
 export interface GeminiMessage {
@@ -10,8 +10,15 @@ export interface GeminiMessage {
   content: string;
 }
 
-export interface GeminiFormattedText extends Pick<GeminiMessage, "role">{
-    parts: {
-        text: string;
-    }[];
+export interface GeminiFormattedText extends Pick<GeminiMessage, "role"> {
+  parts: {
+    text: string;
+  }[];
+}
+
+export interface SerializedError {
+  name: string;
+  message: string;
+  stack?: string;
+  cause?: unknown;
 }
