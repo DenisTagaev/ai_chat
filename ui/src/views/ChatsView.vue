@@ -2,6 +2,7 @@
     import {
         defineAsyncComponent,
         onMounted,
+        ref,
     } from "vue";
     import {
         useRoute,
@@ -26,6 +27,7 @@
         delay: 0,
     });
 
+    const isSidebarCollapsed = ref(false);
     const route = useRoute();
     const router = useRouter();
 
@@ -71,11 +73,16 @@
 
     <div class="flex-1 flex overflow-hidden">
       <aside
-        class="w-80 shrink-0"
+        class="relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out"
+        :class="isSidebarCollapsed ? 'w-16' : 'w-80'"
       >
         <Suspense>
           <template #default>
-            <ChatSidebar @select="handleSelectChat" />
+            <ChatSidebar
+              :collapsed="isSidebarCollapsed"
+              @select="handleSelectChat"
+              @toggle-collapse="isSidebarCollapsed = !isSidebarCollapsed"
+            />
           </template>
 
           <template #fallback>
@@ -88,7 +95,7 @@
         </Suspense>
       </aside>
 
-      <main class="flex-1 overflow-hidden">
+      <main class="flex-1 min-w-0 overflow-hidden">
         <Suspense>
           <template #default>
             <ChatWindow />

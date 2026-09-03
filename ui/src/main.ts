@@ -2,13 +2,13 @@ import { createApp } from 'vue'
 import { createPinia, type Pinia } from 'pinia'
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate'
 import { OhVueIcon, addIcons } from "oh-vue-icons";
-import { GiNotebook, BiSendPlus, BiPersonBadgeFill, BiRobot, MdErroroutlineRound, BiExclamationTriangle } from "oh-vue-icons/icons";
+import { GiNotebook, GiChatBubble, BiSendPlus, BiPersonBadgeFill, BiRobot, MdErroroutlineRound, BiExclamationTriangle, BiChevronLeft, BiChevronRight } from "oh-vue-icons/icons";
 import { router } from './router'
 import { registerSW } from "virtual:pwa-register";
 import './style.css'
 import App from './App.vue'
 
-addIcons(GiNotebook, BiSendPlus, BiPersonBadgeFill, BiRobot, MdErroroutlineRound, BiExclamationTriangle);
+addIcons(GiNotebook, GiChatBubble, BiSendPlus, BiPersonBadgeFill, BiRobot, MdErroroutlineRound, BiExclamationTriangle, BiChevronLeft, BiChevronRight);
 const app = createApp(App);
 
 app.component("OhVueIcon", OhVueIcon);
