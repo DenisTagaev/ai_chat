@@ -15,7 +15,7 @@ export async function handleAuth(req: Request, res: Response): Promise<any> {
 
     return AuthResultMapper.toHttpResponse(authResult, res);
   } catch (err: unknown) {
-    req.log.error({ name, email, err: serializeError(err) }, "Registration Error:");
+    req.log.error({ name, email, err: serializeError(err) }, "auth.authenticate_or_register.failed:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }

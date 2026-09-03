@@ -16,7 +16,7 @@ export async function createChat(req: Request, res: Response): Promise<any> {
     const chatResponse: ChatSessionResponse = await ChatService.createChat(userId, message);
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: unknown) {
-    req.log.error({ err: serializeError(err) }, "chat.create_request.error:");
+    req.log.error({ err: serializeError(err) }, "chat.create_request.failed:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -32,7 +32,7 @@ export async function sendMessage(req: Request, res: Response): Promise<any> {
     const chatResponse: ChatResponse = await ChatService.sendMessageToChatById(message, chatId, userId);
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: unknown) {
-    req.log.error({ err: serializeError(err) }, "chat.send_message.error:");
+    req.log.error({ err: serializeError(err) }, "chat.send_message.failed:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -61,7 +61,7 @@ export async function getChatHistory(
       })),
     });
   } catch (err: unknown) {
-    req.log.error({ err: serializeError(err) }, "chat.history_retrieve.error:");
+    req.log.error({ err: serializeError(err) }, "chat.history_retrieve.failed:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -84,7 +84,7 @@ export async function getUserChats(
     const chatResponse: ChatSessionsListResponse = await ChatService.getUserChats(userId);
     return ChatResultMapper.toHttp(res, chatResponse);
   } catch (err: unknown) {
-    req.log.error({ err: serializeError(err), userId }, "User Chats Error");
+    req.log.error({ err: serializeError(err), userId }, "chat.list_user_chats.failed:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
