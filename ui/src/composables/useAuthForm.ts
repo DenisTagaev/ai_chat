@@ -18,7 +18,7 @@ export function useAuthForm() {
 
     if(normalizedEmail.length > 128) return "Email is too long"
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail))
+    if (!/^[^\s@]+@[^.\s@]+(?:\.[^.\s@]+)*\.[^\s@]{2,}$/.test(normalizedEmail))
       return "Please enter a valid email address.";
     return null;
   };
