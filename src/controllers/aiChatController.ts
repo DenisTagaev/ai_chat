@@ -4,6 +4,7 @@ import { ChatResponse, ChatSessionResponse, ChatSessionsListResponse } from "../
 import { ChatResultMapper } from "../middleware/chatResultMapper";
 import { ChatHistoryService } from "../services/chatHistoryService";
 import { ChatSelect } from "../db/schemas";
+import { serializeError } from "../utils/errorSerializer";
 
 // ------------------------------------------
 // POST /ai-chats
@@ -14,8 +15,8 @@ export async function createChat(req: Request, res: Response): Promise<any> {
   try {
     const chatResponse: ChatSessionResponse = await ChatService.createChat(userId, message);
     return ChatResultMapper.toHttp(res, chatResponse);
-  } catch (err: any) {
-    req.log.error({ err }, "chat.create_request.error:");
+  } catch (err: unknown) {
+    req.log.error({ err: serializeError(err) }, "chat.create_request.error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -30,8 +31,8 @@ export async function sendMessage(req: Request, res: Response): Promise<any> {
   try {
     const chatResponse: ChatResponse = await ChatService.sendMessageToChatById(message, chatId, userId);
     return ChatResultMapper.toHttp(res, chatResponse);
-  } catch (err: any) {
-    req.log.error({ err }, "chat.send_message.error:");
+  } catch (err: unknown) {
+    req.log.error({ err: serializeError(err) }, "chat.send_message.error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -59,8 +60,8 @@ export async function getChatHistory(
         reply: item.reply,
       })),
     });
-  } catch (err: any) {
-    req.log.error({ err }, "chat.history_retrieve.error:");
+  } catch (err: unknown) {
+    req.log.error({ err: serializeError(err) }, "chat.history_retrieve.error:");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -82,8 +83,8 @@ export async function getUserChats(
 
     const chatResponse: ChatSessionsListResponse = await ChatService.getUserChats(userId);
     return ChatResultMapper.toHttp(res, chatResponse);
-  } catch (err: any) {
-    req.log.error({ err, userId }, "User Chats Error");
+  } catch (err: unknown) {
+    req.log.error({ err: serializeError(err), userId }, "User Chats Error");
     return res.status(500).json({ error: "Internal Server Error" });
   }
 }
