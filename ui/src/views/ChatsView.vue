@@ -28,6 +28,8 @@
     });
 
     const isSidebarCollapsed = ref(false);
+    const isSidebarAnimating = ref(false);
+
     const route = useRoute();
     const router = useRouter();
 
@@ -47,6 +49,19 @@
               chatId,
             },
         });
+    };
+
+    const handleSidebarAnimation = (): void => {
+        if (isSidebarAnimating.value) {
+          return;
+        }
+
+        isSidebarAnimating.value = true;
+        isSidebarCollapsed.value = !isSidebarCollapsed.value;
+
+        window.setTimeout(() => {
+          isSidebarAnimating.value = false;
+        }, 500);
     };
 
     const initialize = async (): Promise<void> => {
@@ -72,28 +87,81 @@
     <Header />
 
     <div class="flex-1 flex overflow-hidden">
-      <aside
-        class="relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out"
+      <div
+        class="relative shrink-0 transition-[width] duration-500 ease-in-out"
         :class="isSidebarCollapsed ? 'w-16' : 'w-80'"
       >
-        <Suspense>
-          <template #default>
-            <ChatSidebar
-              :collapsed="isSidebarCollapsed"
-              @select="handleSelectChat"
-              @toggle-collapse="isSidebarCollapsed = !isSidebarCollapsed"
-            />
-          </template>
+        <aside class="h-full overflow-hidden">
+          <Suspense>
+            <template #default>
+              <ChatSidebar
+                :collapsed="isSidebarCollapsed"
+                @select="handleSelectChat"
+                @toggle-collapse="handleSidebarAnimation"
+              />
+            </template>
 
-          <template #fallback>
-            <Loader
-              :show="true"
-              overlay
-              label="Loading chats..."
-            />
-          </template>
-        </Suspense>
-      </aside>
+            <template #fallback>
+              <Loader
+                :show="true"
+                overlay
+                label="Loading chats..."
+              />
+            </template>
+          </Suspense>
+        </aside>
+      </div>
+
+      <div
+        v-if="isSidebarAnimating"
+        class="
+          pointer-events-none
+          absolute
+          inset-y-0
+          left-0
+          z-999
+          w-80
+          overflow-hidden
+        "
+        aria-hidden="true"
+      >
+        <div
+          class="
+            absolute
+            inset-0
+            flex
+            flex-col
+            justify-around
+            py-8
+          "
+          :class="isSidebarCollapsed ? 'animate-sidebar-collapse' : 'animate-sidebar-expand'"
+        >
+          <span
+            class="h-2 w-[35%] self-end bg-sky-400/80"
+            style="animation-delay: 0ms"
+          />
+          <span
+            class="h-1 w-[65%] self-end bg-blue-400/60"
+            style="animation-delay: 50ms"
+          />
+          <span
+            class="h-px w-[90%] self-end bg-sky-300/80"
+            style="animation-delay: 100ms"
+          />
+          <span
+            class="h-2 w-[45%] self-end bg-blue-500/50"
+            style="animation-delay: 150ms"
+          />
+          <span
+            class="h-px w-[75%] self-end bg-sky-400/70"
+            style="animation-delay: 200ms"
+          />
+          <span
+            class="h-1 w-[30%] self-end bg-blue-400/60"
+            style="animation-delay: 250ms"
+          />
+        </div>
+      </div>
 
       <main class="flex-1 min-w-0 overflow-hidden">
         <Suspense>

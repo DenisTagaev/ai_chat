@@ -21,3 +21,50 @@ span.loader::before {
     bottom: 0;
     transform: translate(-150%, -150%);
 }
+
+@keyframes sidebar-collapse {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes sidebar-expand {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.animate-sidebar-collapse span,
+.animate-sidebar-expand span {
+    animation-duration: 500ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+}
+
+.animate-sidebar-collapse span {
+    animation-name: sidebar-collapse;
+}
+
+.animate-sidebar-expand span {
+    animation-name: sidebar-expand;
+}
