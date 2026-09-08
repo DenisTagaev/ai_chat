@@ -104,6 +104,13 @@
       v-if="!props.collapsed"
       class="flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg"
     >
+      <span
+        v-if="props.animating"
+        class="sidebar-door sidebar-header-door bg-slate-200 dark:bg-slate-600"
+        :class="{ 'sidebar-door-opening': !props.collapsed}"
+        aria-hidden="true"
+      ></span>
+
       <h2 id="recent-chats-heading" class="text-lg font-semibold font-mono tracking-wide uppercase text-shadow-slate-800 dark:text-slate-200">Chats Log</h2>
       <span class="font-mono text-slate-500" aria-hidden="true">
         {{ sessions.length }}
@@ -115,7 +122,19 @@
     </p>
 
     <ul aria-labelledby="recent-chats-heading" v-else class="sidebar-content flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
-      <li v-for="session in sessions" :key="session.chatId" class="sidebar-chat-item min-w-0">
+      <li
+        v-for="(session, index) in sessions"
+        :key="session.chatId"
+        class="sidebar-chat-item relative min-w-0"
+        :style="{ '--item-index' : index}"
+      >
+        <span
+          v-if="props.animating"
+          class="sidebar-chat-door bg-slate-200 dark:bg-slate-600"
+          :class="{ 'sidebar-chat-door-opening': !props.collapsed}"
+          aria-hidden="true"
+        ></span>
+
         <button
           type="button"
           class="
