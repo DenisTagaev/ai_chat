@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* =========================================================
+   LOADER CONTROLS
+   ========================================================= */
+
 span.loader::after,
 span.loader::before {
     content: "";
@@ -12,6 +16,10 @@ span.loader::before {
     height: 6px;
     transform: translate(150%, 150%);
     border-radius: 9999px;
+    -webkit-transform: translate(150%, 150%);
+    -moz-transform: translate(150%, 150%);
+    -ms-transform: translate(150%, 150%);
+    -o-transform: translate(150%, 150%);
 }
 
 span.loader::before {
@@ -20,51 +28,115 @@ span.loader::before {
     right: 0;
     bottom: 0;
     transform: translate(-150%, -150%);
+    -webkit-transform: translate(-150%, -150%);
+    -moz-transform: translate(-150%, -150%);
+    -ms-transform: translate(-150%, -150%);
+    -o-transform: translate(-150%, -150%);
 }
 
-@keyframes sidebar-collapse {
-    0% {
+/* =========================================================
+   SIDEBAR CONTROLS
+   ========================================================= */
+
+
+/* Expanding */
+
+/* Collapsing */
+
+.sidebar-door {
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    transform: translateX(0);
+    -webkit-transform: translateX(0);
+    -moz-transform: translateX(0);
+    -ms-transform: translateX(0);
+    -o-transform: translateX(0);
+}
+
+.sidebar-door-top {
+    top: 0;
+    height: 50%;
+}
+
+.sidebar-door-bottom {
+    bottom: 0;
+    height: 50%;
+}
+
+.sidebar-door-opening{
+    height: 100%;
+    animation: door-opening 500ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    -webkit-animation: door-opening 500ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    transform: translateX(-100%);
+    -webkit-transform: translateX(-100%);
+    -moz-transform: translateX(-100%);
+    -ms-transform: translateX(-100%);
+    -o-transform: translateX(-100%);
+}
+
+.sidebar-collapsed .sidebar-door-top {
+    animation: door-top 400ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    -webkit-animation: door-top 400ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.sidebar-collapsed .sidebar-door-bottom {
+    animation: door-bottom 500ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    -webkit-animation: door-bottom 500ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes door-opening {
+    from {
+        transform: translateX(0);
+        -webkit-transform: translateX(0);
+        -moz-transform: translateX(0);
+        -ms-transform: translateX(0);
+        -o-transform: translateX(0);
+}
+
+    to {
         transform: translateX(100%);
-        opacity: 0;
+        -webkit-transform: translateX(100%);
+        -moz-transform: translateX(100%);
+        -ms-transform: translateX(100%);
+        -o-transform: translateX(100%);
+}
+}
+
+@keyframes door-top {
+    from {
+        transform: translateX(0);
+        -webkit-transform: translateX(0);
+        -moz-transform: translateX(0);
+        -ms-transform: translateX(0);
+        -o-transform: translateX(0);
     }
 
-    20% {
-        opacity: 1;
-    }
-
-    100% {
+    to {
         transform: translateX(-100%);
-        opacity: 0;
+        -webkit-transform: translateX(-100%);
+        -moz-transform: translateX(-100%);
+        -ms-transform: translateX(-100%);
+        -o-transform: translateX(-100%);
     }
 }
 
-@keyframes sidebar-expand {
-    0% {
+@keyframes door-bottom {
+    from {
+        transform: translateX(0);
+        -webkit-transform: translateX(0);
+        -moz-transform: translateX(0);
+        -ms-transform: translateX(0);
+        -o-transform: translateX(0);
+    }
+
+    to {
         transform: translateX(-100%);
-        opacity: 0;
+        -webkit-transform: translateX(-100%);
+        -moz-transform: translateX(-100%);
+        -ms-transform: translateX(-100%);
+        -o-transform: translateX(-100%);
     }
-
-    20% {
-        opacity: 1;
-    }
-
-    100% {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-.animate-sidebar-collapse span,
-.animate-sidebar-expand span {
-    animation-duration: 500ms;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    animation-fill-mode: both;
-}
-
-.animate-sidebar-collapse span {
-    animation-name: sidebar-collapse;
-}
-
-.animate-sidebar-expand span {
-    animation-name: sidebar-expand;
 }

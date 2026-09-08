@@ -96,6 +96,7 @@
             <template #default>
               <ChatSidebar
                 :collapsed="isSidebarCollapsed"
+                :animating="isSidebarAnimating"
                 @select="handleSelectChat"
                 @toggle-collapse="handleSidebarAnimation"
               />
@@ -110,57 +111,6 @@
             </template>
           </Suspense>
         </aside>
-      </div>
-
-      <div
-        v-if="isSidebarAnimating"
-        class="
-          pointer-events-none
-          absolute
-          inset-y-0
-          left-0
-          z-999
-          w-80
-          overflow-hidden
-        "
-        aria-hidden="true"
-      >
-        <div
-          class="
-            absolute
-            inset-0
-            flex
-            flex-col
-            justify-around
-            py-8
-          "
-          :class="isSidebarCollapsed ? 'animate-sidebar-collapse' : 'animate-sidebar-expand'"
-        >
-          <span
-            class="h-2 w-[35%] self-end bg-sky-400/80"
-            style="animation-delay: 0ms"
-          />
-          <span
-            class="h-1 w-[65%] self-end bg-blue-400/60"
-            style="animation-delay: 50ms"
-          />
-          <span
-            class="h-px w-[90%] self-end bg-sky-300/80"
-            style="animation-delay: 100ms"
-          />
-          <span
-            class="h-2 w-[45%] self-end bg-blue-500/50"
-            style="animation-delay: 150ms"
-          />
-          <span
-            class="h-px w-[75%] self-end bg-sky-400/70"
-            style="animation-delay: 200ms"
-          />
-          <span
-            class="h-1 w-[30%] self-end bg-blue-400/60"
-            style="animation-delay: 250ms"
-          />
-        </div>
       </div>
 
       <main class="flex-1 min-w-0 overflow-hidden">
