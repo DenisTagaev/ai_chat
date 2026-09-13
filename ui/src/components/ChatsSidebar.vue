@@ -20,7 +20,7 @@
     const chatSessionsStore = useChatSessionsStore();
     const chatStore = useChatStore()
 
-    const { sessions } = storeToRefs(chatSessionsStore);
+    const { sessions, hasFetchedSessions, isLoading } = storeToRefs(chatSessionsStore);
 
     const currentChatId = computed((): string => {
       return String(route.params.chatId ?? "");
@@ -117,11 +117,11 @@
       </span>
     </header>
 
-    <p v-if="!sessions.length" class="p-4 text-medium text-center italic text-slate-500 dark:text-slate-400">
+    <p v-if="!hasFetchedSessions && !isLoading" class="p-4 text-medium text-center italic text-slate-500 dark:text-slate-400">
       No recent chats available.
     </p>
 
-    <ul aria-labelledby="recent-chats-heading" v-else class="sidebar-content flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
+    <ul aria-labelledby="recent-chats-heading" v-else-if="!isLoading" class="sidebar-content flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
       <li
         v-for="(session, index) in sessions"
         :key="session.chatId"

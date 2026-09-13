@@ -65,7 +65,7 @@
     };
 
     const initialize = async (): Promise<void> => {
-        if (!sessions.value.length) {
+        if (!chatSessionsStore.hasFetchedSessions && !chatSessionsStore.isLoading) {
             await chatSessionsStore.fetchSessions();
         }
 

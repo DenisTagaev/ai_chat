@@ -9,16 +9,20 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
   const { controller, create, abort: abortRequest } = useAbortController();
   const sessions = ref<ChatSession[]>([]);
   const userStore = useUserStore();
+  const isLoading = ref(false);
+  const hasFetchedSessions = ref(false);
 
   async function fetchSessions(): Promise<void> {
     if (!userStore.userId) return;
 
+    isLoading.value = true;
     create();
 
     try {
       const chats = await sessionsService.fetchSessions(userStore.userId, controller.value?.signal);
 
       sessions.value = chats;
+      hasFetchedSessions.value = true;
     } catch (error: unknown) {
       const errorResult: ApiErrorResult = handleApiError(
         error,
@@ -29,6 +33,7 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
         console.error(errorResult.message);
       }
     } finally {
+      isLoading.value = false;
       abortRequest();
     }
   }
@@ -38,6 +43,7 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
       throw new Error("User Is not authenticated");
     };
 
+    isLoading.value = true;
     create();
 
     try {
@@ -57,6 +63,7 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
 
       throw error;
     } finally {
+      isLoading.value = false;
       abortRequest();
     }
   }
@@ -79,10 +86,14 @@ export const useChatSessionsStore = defineStore("chatSessions", () => {
 
   function reset() {
     sessions.value = [];
+    isLoading.value = false;
+    hasFetchedSessions.value = false;
   }
 
   return {
     sessions: readonly(sessions),
+    isLoading: readonly(isLoading),
+    hasFetchedSessions: readonly(hasFetchedSessions),
     fetchSessions,
     createSession,
     updateSession,
