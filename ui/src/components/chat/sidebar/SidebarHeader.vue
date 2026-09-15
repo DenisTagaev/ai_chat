@@ -1,14 +1,14 @@
 <script setup lang="ts">
-    defineProps<{
+  defineProps<{
     count: number;
     animating: boolean;
     opening: boolean;
-    }>();
+  }>();
 </script>
 
 <template>
   <header
-    class="relative flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg"
+    class="flex items-center justify-between p-4 border-b border-slate-700 dark:border-slate-200 backdrop-blur-lg"
   >
     <span
       v-if="animating"
