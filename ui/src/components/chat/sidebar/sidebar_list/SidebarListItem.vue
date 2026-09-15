@@ -1,9 +1,5 @@
 <script setup lang="ts">
-    interface ChatSession {
-        chatId: string;
-        title: string;
-        updatedAt: string;
-    }
+    import type { ChatSession } from '../../../../services/sessionsService';
 
     const props = defineProps<{
         session: ChatSession;
@@ -34,7 +30,7 @@
   >
     <span
       v-if="props.animating"
-      class="sidebar-chat-door bg-slate-100 dark:bg-slate-600"
+      class="sidebar-chat-door bg-slate-200 dark:bg-slate-600"
       :class="{ 'sidebar-chat-door-opening': !props.collapsed }"
       aria-hidden="true"
     ></span>

@@ -3,7 +3,7 @@
   import SidebarListItem from "./SidebarListItem.vue";
 
   const props = defineProps<{
-    sessions: ChatSession[];
+    sessions: readonly ChatSession[];
     currentChatId: string;
     collapsed: boolean;
     animating: boolean;
