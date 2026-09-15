@@ -70,7 +70,7 @@
     />
 
     <SidebarEmptyList
-      v-if="!hasFetchedSessions && !isLoading"
+      v-if="hasFetchedSessions && !isLoading && sessions.length === 0"
     />
 
     <SidebarList

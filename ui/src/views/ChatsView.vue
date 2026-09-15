@@ -9,7 +9,6 @@
         useRouter,
         onBeforeRouteUpdate,
     } from "vue-router";
-    import { storeToRefs } from "pinia";
 
     import Header from "../components/Header.vue";
     import Loader from "../components/Loader.vue";
@@ -23,7 +22,7 @@
     });
 
     const ChatSidebar = defineAsyncComponent({
-        loader: () => import("../components/ChatsSidebar.vue"),
+        loader: () => import("../components/chat/sidebar/ChatsSidebar.vue"),
         delay: 0,
     });
 
@@ -35,8 +34,6 @@
 
     const chatSessionsStore = useChatSessionsStore();
     const chatStore = useChatStore();
-
-    const { sessions } = storeToRefs(chatSessionsStore);
 
     const handleSelectChat = async (chatId: string): Promise<void> => {
         if (chatId === route.params.chatId) {
