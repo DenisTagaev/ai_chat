@@ -71,6 +71,7 @@
 
     <SidebarEmptyList
       v-if="hasFetchedSessions && !isLoading && sessions.length === 0"
+      :collapsed="props.collapsed"
     />
 
     <SidebarList
