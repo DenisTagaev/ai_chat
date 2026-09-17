@@ -7,23 +7,23 @@
 <template>
   <div
     v-if="collapsed"
-    class="flex flex-1 flex-col items-center justify-center gap-2 px-1 text-center"
+    class="group flex flex-1 flex-col items-center justify-center gap-2 px-1 text-center hover:text-slate-600 dark:hover:text-slate-200"
     title="No recent chats. Click New Chat to begin."
     aria-label="No recent chats. Click New Chat to begin."
   >
     <OhVueIcon
       name="gi-chat-bubble"
-      class="h-5 w-5 text-slate-400 dark:text-slate-500"
+      class="h-5 w-5 text-slate-500 dark:text-slate-400"
       aria-hidden="true"
     />
 
     <span
-      class="h-1 w-1 rounded-full bg-slate-400 dark:bg-slate-500"
+      class="h-1 w-1 rounded-full bg-slate-500 dark:bg-slate-400"
       aria-hidden="true"
     />
 
     <span
-      class="font-mono text-[0.8em] leading-tight uppercase tracking-wider text-slate-400 dark:text-slate-500 [writing-mode:vertical-rl]"
+      class="font-mono text-[0.83em] leading-relaxed uppercase tracking-wider text-slate-400 dark:text-slate-500 [writing-mode:vertical-rl]"
     >
       No chats
     </span>
@@ -44,7 +44,7 @@
     >
       You haven't started any chats yet. Click the
       <span
-        class="group inline-flex items-center gap-1 hover:cursor-pointer hover:font-semibold hover:text-slate-600 dark:hover:text-slate-200"
+        class="group hover:cursor-pointer hover:font-semibold hover:text-slate-600 dark:hover:text-slate-200"
       >
         <OhVueIcon
           name="gi-notebook"
