@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { computed } from "vue";
     import { useRoute, useRouter } from "vue-router";
+    import { useBreakpoints } from "@vueuse/core";
     import { storeToRefs } from "pinia";
 
     import { useChatSessionsStore } from "../../../stores/chatSessions";
@@ -20,6 +21,14 @@
       (e: "select", chatId: string): void;
       (e: "toggle-collapse"): [];
     }>();
+
+    const breakpoints = useBreakpoints({
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      "2xl": 1536,
+    });
 
     const route = useRoute();
     const router = useRouter();
@@ -43,6 +52,10 @@
 
     const handleNewChat = async(event: MouseEvent): Promise<void> => {
       chatStore.showNewChatArea();
+
+      if(!props.collapsed && breakpoints.smaller("sm").value) {
+        emit("toggle-collapse");
+      }
 
       await router.push({ name: "Chats List" });
       (event.currentTarget as HTMLButtonElement).blur();
