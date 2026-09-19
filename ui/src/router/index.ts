@@ -59,16 +59,15 @@ router.onError((): void => {
   isRouteLoading.value = false;
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   isRouteLoading.value = true;
   const user = useUserStore();
 
   if(to.name === "AI chat" && !user.isAuthenticated) {
-    next({ name: "home", replace: true });
-    return;
+    return { name: "home", replace: true };
   }
 
-  next();
+  return true;
 });
 
 router.afterEach((to) => {
