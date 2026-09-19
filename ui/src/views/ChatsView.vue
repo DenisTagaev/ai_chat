@@ -86,7 +86,7 @@
     <div class="flex-1 flex overflow-hidden">
       <div
         class="relative shrink-0 transition-[width] duration-500 ease-in-out"
-        :class="isSidebarCollapsed ? 'w-16' : 'w-80'"
+        :class="isSidebarCollapsed ? 'w-16' : 'w-full sm:w-80'"
       >
         <aside class="h-full overflow-hidden">
           <Suspense>
