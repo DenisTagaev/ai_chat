@@ -11,9 +11,29 @@ import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
 
 const app = express();
-const isTestEnv: boolean = process.env.NODE_ENV === "test";
+app.disable("x-powered-by");
 
-app.use(cors());
+const isTestEnv: boolean = process.env.NODE_ENV === "test";
+const isProdEnv: boolean = process.env.NODE_ENV === "production";
+
+if (isProdEnv && !process.env.FRONTEND_URL) {
+  throw new Error("FRONTEND_URL must be set in production");
+}
+
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+app.use(
+  cors({
+    origin:
+      isProdEnv
+        ? process.env.FRONTEND_URL
+        : "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-request-id"],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
