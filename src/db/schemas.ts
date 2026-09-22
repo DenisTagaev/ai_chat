@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, AnyPgColumn, index, uniqueIndex, PgTableWithColumns } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, index, PgTableWithColumns } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns.helpers";
 
 export const users: PgTableWithColumns<any> = pgTable(
@@ -11,7 +11,6 @@ export const users: PgTableWithColumns<any> = pgTable(
   },
   (table) => [
     index("name_idx").on(table.name),
-    uniqueIndex("email_idx").on(table.email),
   ]
 );
 
@@ -23,7 +22,7 @@ export const chatsSessions: PgTableWithColumns<any> = pgTable(
 
     userId: varchar("user_id", { length: 256 })
       .notNull()
-      .references((): AnyPgColumn => users.userId, {
+      .references(() => users.userId, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -32,8 +31,7 @@ export const chatsSessions: PgTableWithColumns<any> = pgTable(
     ...timestamps,
   },
   (table) => [
-    index("user_chat_session_idx").on(table.userId, table.chatId),
-    index("chat_session_idx").on(table.chatId)
+    index("chat_sessions_updated_at_idx").on(table.userId, table.updatedAt.desc()),
   ]
 );
 
@@ -43,7 +41,7 @@ export const chats: PgTableWithColumns<any> = pgTable(
     id: serial("id").primaryKey(),
     chatId: varchar("chat_id", { length: 256 })
       .notNull()
-      .references((): AnyPgColumn => chatsSessions.chatId, {
+      .references(() => chatsSessions.chatId, {
         onDelete: 'cascade',
         onUpdate: 'cascade'
       }),
@@ -53,7 +51,7 @@ export const chats: PgTableWithColumns<any> = pgTable(
     ...timestamps,
   },
   (table) => [
-    index("chat_idx").on(table.chatId),
+    index("chat_created_at_idx").on(table.chatId, table.createdAt.desc()),
   ]
 );
 

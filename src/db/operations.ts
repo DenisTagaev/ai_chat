@@ -14,7 +14,7 @@ export async function createNeonUser(id: string, name: string, email: string) {
 
 export async function getNeonUserById(userId: string) {
   return withTimeout(
-    db.select().from(users).where(eq(users.userId, userId)),
+    db.select().from(users).where(eq(users.userId, userId)).limit(1),
     5000,
     "USERS SELECT call"
   );
@@ -73,7 +73,7 @@ export async function createChatSession(chatId: string, userId: string, title: s
 
 export async function getChatSessionsByChatId(chatId: string) {
   return withTimeout(
-    db.select().from(chatsSessions).where(eq(chatsSessions.chatId, chatId)),
+    db.select().from(chatsSessions).where(eq(chatsSessions.chatId, chatId)).limit(1),
     5000,
     "CHAT SESSIONS SELECT by chatId call"
   );
@@ -98,7 +98,7 @@ export async function getChatSessionsByUserId(userId: string) {
       )`
     )
     .where(eq(chatsSessions.userId, userId))
-    .orderBy(desc(sql`COALESCE(${chatsSessions.updatedAt}, ${chats.updatedAt})`)),
+    .orderBy(desc(chatsSessions.updatedAt)),
     5000,
     "CHAT SESSIONS SELECT by userId call"
   );
