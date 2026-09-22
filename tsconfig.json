@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     // Use ECMAScript Modules (ESM) with Node.js compatibility.
-    "module": "ESNext",
+    "module": "commonjs",
     // Controls how modules are resolved. "NodeNext" enables native ESM support.
     "moduleResolution": "node",
     // Target ECMAScript Next to enable the latest JavaScript features.
