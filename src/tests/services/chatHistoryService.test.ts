@@ -16,8 +16,8 @@ import { ChatHistoryService } from "../../services/chatHistoryService";
 import { getStreamChatHistoryFromDB } from "../../db/operations";
 
 describe("ChatHistoryService", () => {
-  const userId: string = "user-123";
-  const cacheKey: string = `chat_history:${userId}`;
+  const chatId: string = "chat-123"
+  const cacheKey: string = `chat_history:${chatId}`;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -27,12 +27,12 @@ describe("ChatHistoryService", () => {
   // getHistory  - cache hit
   // -----------------------------
   it("should return cached chat history if available", async () => {
-    const cached: { [x: string]: any }[] = [{ message: "Hi", reply: "Hello" }];
+    const cached: { [x: string]: any }[] = [{ chatId, message: "Hi", reply: "Hello" }];
 
     mockRedis.get.mockResolvedValue(cached);
 
     const result: { [x: string]: any }[] =
-      await ChatHistoryService.getHistory(userId);
+      await ChatHistoryService.getHistory(chatId);
 
     expect(mockRedis.get).toHaveBeenCalledWith(cacheKey);
     expect(result).toEqual(cached);
@@ -51,9 +51,9 @@ describe("ChatHistoryService", () => {
     (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue(dbData);
 
     const result: { [x: string]: any }[] =
-      await ChatHistoryService.getHistory(userId);
+      await ChatHistoryService.getHistory(chatId);
 
-    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith(userId);
+    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith(chatId);
     expect(mockRedis.set).toHaveBeenCalledWith(cacheKey, dbData, { ex: 600 });
     expect(result).toEqual(dbData);
   });
@@ -70,9 +70,9 @@ describe("ChatHistoryService", () => {
     (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue(dbData);
 
     const result: { [x: string]: any }[] =
-      await ChatHistoryService.getHistory(userId);
+      await ChatHistoryService.getHistory(chatId);
 
-    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith(userId);
+    expect(getStreamChatHistoryFromDB).toHaveBeenCalledWith(chatId);
     expect(result).toEqual(dbData);
   });
 
@@ -85,7 +85,7 @@ describe("ChatHistoryService", () => {
     (getStreamChatHistoryFromDB as jest.Mock).mockResolvedValue([]);
 
     const result: { [x: string]: any }[] =
-      await ChatHistoryService.getHistory(userId);
+      await ChatHistoryService.getHistory(chatId);
 
     expect(mockRedis.set).not.toHaveBeenCalled();
     expect(result).toEqual([]);
@@ -95,19 +95,19 @@ describe("ChatHistoryService", () => {
   // addMessageToHistory - cache exists
   // -----------------------------
   it("should append message to cached chat history", async () => {
-    const cached: { [x: string]: any }[] = [{ message: "Hi", reply: "Hello" }];
+    const cached: { [x: string]: any }[] = [{ chatId, message: "Hi", reply: "Hello" }];
 
     mockRedis.get.mockResolvedValue([...cached]);
 
     await ChatHistoryService.addMessageToHistory(
-      userId,
+      chatId,
       "New message",
       "New reply",
     );
 
     expect(mockRedis.set).toHaveBeenCalledWith(
       cacheKey,
-      [...cached, { message: "New message", reply: "New reply" }],
+      [...cached, { chatId, message: "New message", reply: "New reply" }],
       { ex: 600 },
     );
   });
@@ -118,7 +118,7 @@ describe("ChatHistoryService", () => {
   it("should do nothing if cache data does not exist", async () => {
     mockRedis.get.mockResolvedValue(null);
 
-    await ChatHistoryService.addMessageToHistory(userId, "Msg", "Reply");
+    await ChatHistoryService.addMessageToHistory(chatId, "Msg", "Reply");
 
     expect(mockRedis.set).not.toHaveBeenCalled();
   });
@@ -129,7 +129,7 @@ describe("ChatHistoryService", () => {
   it("should do nothing if cache data is invalid", async () => {
     mockRedis.get.mockResolvedValue("invalid");
 
-    await ChatHistoryService.addMessageToHistory(userId, "Msg", "Reply");
+    await ChatHistoryService.addMessageToHistory(chatId, "Msg", "Reply");
 
     expect(mockRedis.set).not.toHaveBeenCalled();
   });
@@ -140,7 +140,7 @@ describe("ChatHistoryService", () => {
   it("should delete cached chat history", async () => {
     mockRedis.del.mockResolvedValue(1);
 
-    await ChatHistoryService.invalidateHistory(userId);
+    await ChatHistoryService.invalidateHistory(chatId);
 
     expect(mockRedis.del).toHaveBeenCalledWith(cacheKey);
   });

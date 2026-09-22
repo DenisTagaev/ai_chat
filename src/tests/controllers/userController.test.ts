@@ -16,15 +16,24 @@ describe("User Controller", () => {
     jest.clearAllMocks();
   });
 
-  // -----------------------------
-  // POST /api/users/auth (adjust if route differs)
-  // -----------------------------
+  // ------------------------------------------
+  // POST /api/users/auth
+  // ------------------------------------------
+
   describe("POST /api/users/auth", () => {
-    it("should call AuthService and call mapper for response", async () => {
+    it("should authenticate or register the user and map the response", async () => {
       const mockAuthResult = {
         type: "fully_registered",
-        user: { id: "123", name: "Denis" },
-        chatHistory: [{ message: "Hi", reply: "Hello" }],
+        user: {
+          id: "123",
+          name: "Denis",
+        },
+        chatHistory: [
+          {
+            message: "Hi",
+            reply: "Hello",
+          },
+        ],
       };
 
       (AuthService.authenticateOrRegister as jest.Mock).mockResolvedValue(
@@ -51,29 +60,41 @@ describe("User Controller", () => {
       expect(res.body).toEqual(mockAuthResult);
     });
 
-    it("should handle service error and return 500", async () => {
+    it("should return 500 if authentication or registration fails", async () => {
       (AuthService.authenticateOrRegister as jest.Mock).mockRejectedValue(
         new Error("Auth failure"),
       );
 
       const res = await request(app).post("/api/users/auth").send(validBody);
 
+      expect(AuthService.authenticateOrRegister).toHaveBeenCalledWith(
+        validBody.name,
+        validBody.email,
+      );
+
       expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: "Internal Server Error" });
+      expect(res.body).toEqual({
+        error: "Internal Server Error",
+      });
     });
 
-    it("should pass undefined values if fields are missing", async () => {
+    it("should pass request fields to AuthService", async () => {
+      const body = {
+        name: "Alex",
+        email: "alex@test.com",
+      };
+
       (AuthService.authenticateOrRegister as jest.Mock).mockResolvedValue({});
 
       (AuthResultMapper.toHttpResponse as jest.Mock).mockImplementation(
         (_data, res) => res.status(200).json({}),
       );
 
-      await request(app).post("/api/users/auth").send({});
+      await request(app).post("/api/users/auth").send(body);
 
       expect(AuthService.authenticateOrRegister).toHaveBeenCalledWith(
-        undefined,
-        undefined,
+        body.name,
+        body.email,
       );
     });
   });

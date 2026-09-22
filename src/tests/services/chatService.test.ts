@@ -1,10 +1,14 @@
 jest.mock("../../db/operations", () => ({
-  saveStreamChatMessageToDB: jest.fn(),
+  createChatSession: jest.fn(),
+  getChatSessionsByUserId: jest.fn(),
+  persistChatMessage: jest.fn(),
 }));
 
 jest.mock("../../services/streamChatService", () => ({
   StreamChatService: {
-    sendMessageToAi: jest.fn(),
+    getOrCreateChatChannel: jest.fn(),
+    sendUserMessage: jest.fn(),
+    sendAiMessage: jest.fn(),
   },
 }));
 
@@ -27,133 +31,445 @@ jest.mock("../../services/userService", () => ({
   },
 }));
 
+jest.mock("../../utils/idGenerator", () => ({
+  generateChatId: jest.fn(),
+}));
+
 import { ChatService } from "../../services/chatService";
-import { saveStreamChatMessageToDB } from "../../db/operations";
+import {
+  createChatSession,
+  getChatSessionsByUserId,
+  persistChatMessage,
+} from "../../db/operations";
 import { StreamChatService } from "../../services/streamChatService";
 import { ChatHistoryService } from "../../services/chatHistoryService";
 import { geminiAiService } from "../../services/geminiAiService";
 import { UserService } from "../../services/userService";
-import { ChatResponse } from "../../utils/types";
+import { generateChatId } from "../../utils/idGenerator";
+import {
+  ChatResponse,
+  ChatSessionResponse,
+  ChatSessionsListResponse,
+} from "../../utils/types";
 
 describe("ChatService", () => {
-  const userId: string = "user-123";
-  const message: string = "Hello AI";
+  const userId = "user-123";
+  const chatId = "chat-123";
+  const message = "Hello AI";
+  const updatedAt = new Date("2026-01-01T00:00:00.000Z");
+
+  const registeredUserState = {
+    isNeonUser: true,
+    isStreamUser: true,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-  });
 
-  // -----------------------------
-  // validation error
-  // -----------------------------
-  it("should return validation_error if message or userId is missing", async () => {
-    const chatResponse: ChatResponse = await ChatService.interactWithChat("", userId);
-
-    expect(chatResponse).toEqual({ type: "validation_error" });
-  });
-
-  // -----------------------------
-  // user not found
-  // -----------------------------
-  it("should return user_not_found if user state is inconsistent", async () => {
     (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "inconsistent_registration",
+      registeredUserState,
     );
 
-    const chatResponse: ChatResponse = await ChatService.interactWithChat(message, userId);
-
-    expect(chatResponse).toEqual({ type: "user_not_found" });
-  });
-
-  // -----------------------------
-  // success path
-  // -----------------------------
-  it("should successfully interact with chat", async () => {
-    (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "fully_registered",
-    );
-
-    const mockHistory: {
-      [x: string]: any;
-    }[] = [{ message: "Hi", reply: "Hello" }];
-
-    (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue(mockHistory);
-    (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
-      "AI reply",
-    );
-
-    (StreamChatService.sendMessageToAi as jest.Mock).mockResolvedValue({});
-    (saveStreamChatMessageToDB as jest.Mock).mockResolvedValue({});
-    (ChatHistoryService.addMessageToHistory as jest.Mock).mockResolvedValue(
+    (StreamChatService.getOrCreateChatChannel as jest.Mock).mockResolvedValue(
       undefined,
     );
 
-    const chatResponse: ChatResponse = await ChatService.interactWithChat(message, userId);
+    (StreamChatService.sendUserMessage as jest.Mock).mockResolvedValue(
+      undefined,
+    );
 
-    expect(chatResponse).toEqual({
-      type: "success",
-      reply: "AI reply",
-    });
-    expect(geminiAiService.generateResponse).toHaveBeenCalledWith(message, [
-      { role: "user", content: "Hi" },
-      { role: "model", content: "Hello" },
-    ]);
-    expect(StreamChatService.sendMessageToAi).toHaveBeenCalledWith(
-      userId,
-      "AI reply",
-    );
-    expect(saveStreamChatMessageToDB).toHaveBeenCalledWith(
-      userId,
-      message,
-      "AI reply",
-    );
-    expect(ChatHistoryService.addMessageToHistory).toHaveBeenCalledWith(
-      userId,
-      message,
-      "AI reply",
+    (StreamChatService.sendAiMessage as jest.Mock).mockResolvedValue(undefined);
+
+    (ChatHistoryService.addMessageToHistory as jest.Mock).mockResolvedValue(
+      undefined,
     );
   });
 
-  // -----------------------------
-  // empty history edge case
-  // -----------------------------
-  it("should successfully work with empty chat history", async () => {
-    (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "fully_registered",
-    );
+  // ============================================================
+  // getUserChats
+  // ============================================================
 
-    (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue([]);
-    (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
-      "Fresh reply",
-    );
+  describe("getUserChats", () => {
+    it("should return validation_error if userId is missing", async () => {
+      const result: ChatSessionsListResponse =
+        await ChatService.getUserChats("");
 
-    const chatResponse: ChatResponse = await ChatService.interactWithChat(message, userId);
+      expect(result).toEqual({
+        type: "validation_error",
+      });
 
-    expect(geminiAiService.generateResponse).toHaveBeenCalledWith(
-      message,
-      [],
-    );
+      expect(UserService.getUserRegisterState).not.toHaveBeenCalled();
+    });
 
-    expect(chatResponse).toEqual({
-      type: "success",
-      reply: "Fresh reply",
+    it("should return user_not_found if user registration is inconsistent", async () => {
+      (UserService.getUserRegisterState as jest.Mock).mockResolvedValue({
+        isNeonUser: true,
+        isStreamUser: false,
+      });
+
+      const result: ChatSessionsListResponse =
+        await ChatService.getUserChats(userId);
+
+      expect(result).toEqual({
+        type: "user_not_found",
+      });
+
+      expect(getChatSessionsByUserId).not.toHaveBeenCalled();
+    });
+
+    it("should return internal_error if retrieving chats fails", async () => {
+      (getChatSessionsByUserId as jest.Mock).mockRejectedValue(
+        new Error("Database failure"),
+      );
+
+      const result: ChatSessionsListResponse =
+        await ChatService.getUserChats(userId);
+
+      expect(result).toEqual({
+        type: "internal_error",
+      });
     });
   });
 
-  // -----------------------------
-  // AI or server error
-  // -----------------------------
-  it("should throw if AI service fails", async () => {
-    (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "fully_registered",
-    );
-    (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue([]);
-    (geminiAiService.generateResponse as jest.Mock).mockRejectedValue(
-      new Error("AI failure"),
-    );
+  // ============================================================
+  // createChat
+  // ============================================================
 
-    await expect(ChatService.interactWithChat(message, userId)).rejects.toThrow(
-      "AI failure",
-    );
+  describe("createChat", () => {
+    it("should return validation_error if userId or firstMessage is missing", async () => {
+      const result: ChatSessionResponse = await ChatService.createChat(
+        userId,
+        "",
+      );
+
+      expect(result).toEqual({
+        type: "validation_error",
+      });
+
+      expect(UserService.getUserRegisterState).not.toHaveBeenCalled();
+    });
+
+    it("should return user_not_found if user registration is inconsistent", async () => {
+      (UserService.getUserRegisterState as jest.Mock).mockResolvedValue({
+        isNeonUser: true,
+        isStreamUser: false,
+      });
+
+      const result: ChatSessionResponse = await ChatService.createChat(
+        userId,
+        message,
+      );
+
+      expect(result).toEqual({
+        type: "user_not_found",
+      });
+
+      expect(createChatSession).not.toHaveBeenCalled();
+    });
+
+    it("should create a chat and process the first message successfully", async () => {
+      const firstReply = "Hello Human!";
+
+      (generateChatId as jest.Mock).mockReturnValue(chatId);
+
+      (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+        firstReply,
+      );
+
+      (persistChatMessage as jest.Mock).mockResolvedValue({
+        updatedAt,
+      });
+
+      const result: ChatSessionResponse = await ChatService.createChat(
+        userId,
+        message,
+      );
+
+      expect(generateChatId).toHaveBeenCalled();
+
+      expect(createChatSession).toHaveBeenCalledWith(chatId, userId, message);
+
+      expect(StreamChatService.getOrCreateChatChannel).toHaveBeenCalledWith(
+        userId,
+        chatId,
+      );
+
+      expect(geminiAiService.generateResponse).toHaveBeenCalledWith(
+        message,
+        [],
+      );
+
+      expect(StreamChatService.sendUserMessage).toHaveBeenCalledWith(
+        userId,
+        chatId,
+        message,
+      );
+
+      expect(StreamChatService.sendAiMessage).toHaveBeenCalledWith(
+        chatId,
+        firstReply,
+      );
+
+      expect(persistChatMessage).toHaveBeenCalledWith(
+        chatId,
+        message,
+        firstReply,
+      );
+
+      expect(ChatHistoryService.addMessageToHistory).toHaveBeenCalledWith(
+        chatId,
+        message,
+        firstReply,
+      );
+
+      expect(result).toEqual({
+        type: "success",
+        chatId,
+        updatedAt,
+      });
+    });
+
+    it("should normalize whitespace when generating the chat title", async () => {
+      const firstMessage = "  Hello    AI   from   my   chat  ";
+      const firstReply = "Hello!";
+
+      (generateChatId as jest.Mock).mockReturnValue(chatId);
+
+      (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+        firstReply,
+      );
+
+      (persistChatMessage as jest.Mock).mockResolvedValue({
+        updatedAt,
+      });
+
+      await ChatService.createChat(userId, firstMessage);
+
+      expect(createChatSession).toHaveBeenCalledWith(
+        chatId,
+        userId,
+        "Hello AI from my chat",
+      );
+    });
+
+    it("should truncate chat titles longer than 25 characters", async () => {
+      const firstMessage = "This is a very long message for a chat title";
+      const firstReply = "Hello!";
+
+      (generateChatId as jest.Mock).mockReturnValue(chatId);
+
+      (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+        firstReply,
+      );
+
+      (persistChatMessage as jest.Mock).mockResolvedValue({
+        updatedAt,
+      });
+
+      await ChatService.createChat(userId, firstMessage);
+
+      expect(createChatSession).toHaveBeenCalledWith(
+        chatId,
+        userId,
+        "This is a very long messa...",
+      );
+    });
+
+    it("should return internal_error if createChat fails", async () => {
+      (generateChatId as jest.Mock).mockReturnValue(chatId);
+
+      (createChatSession as jest.Mock).mockRejectedValue(
+        new Error("Database failure"),
+      );
+
+      const result: ChatSessionResponse = await ChatService.createChat(
+        userId,
+        message,
+      );
+
+      expect(result).toEqual({
+        type: "internal_error",
+      });
+    });
+  });
+
+  // ============================================================
+  // sendMessageToChatById
+  // ============================================================
+
+  describe("sendMessageToChatById", () => {
+    it("should return validation_error if message, chatId, or userId is missing", async () => {
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        "",
+        chatId,
+        userId,
+      );
+
+      expect(result).toEqual({
+        type: "validation_error",
+      });
+
+      expect(UserService.getUserRegisterState).not.toHaveBeenCalled();
+    });
+
+    it("should return user_not_found if user registration is inconsistent", async () => {
+      (UserService.getUserRegisterState as jest.Mock).mockResolvedValue({
+        isNeonUser: true,
+        isStreamUser: false,
+      });
+
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        message,
+        chatId,
+        userId,
+      );
+
+      expect(result).toEqual({
+        type: "user_not_found",
+      });
+
+      expect(ChatHistoryService.getHistory).not.toHaveBeenCalled();
+    });
+
+    it("should successfully send a message to an existing chat", async () => {
+      const mockHistory = [
+        {
+          message: "Hi",
+          reply: "Hello",
+        },
+      ];
+
+      const fullReply = "AI reply";
+
+      (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue(
+        mockHistory,
+      );
+
+      (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+        fullReply,
+      );
+
+      (persistChatMessage as jest.Mock).mockResolvedValue({
+        updatedAt,
+      });
+
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        message,
+        chatId,
+        userId,
+      );
+
+      expect(ChatHistoryService.getHistory).toHaveBeenCalledWith(chatId);
+
+      expect(geminiAiService.generateResponse).toHaveBeenCalledWith(message, [
+        {
+          role: "user",
+          content: "Hi",
+        },
+        {
+          role: "model",
+          content: "Hello",
+        },
+      ]);
+
+      expect(StreamChatService.sendUserMessage).toHaveBeenCalledWith(
+        userId,
+        chatId,
+        message,
+      );
+
+      expect(StreamChatService.sendAiMessage).toHaveBeenCalledWith(
+        chatId,
+        fullReply,
+      );
+
+      expect(persistChatMessage).toHaveBeenCalledWith(
+        chatId,
+        message,
+        fullReply,
+      );
+
+      expect(ChatHistoryService.addMessageToHistory).toHaveBeenCalledWith(
+        chatId,
+        message,
+        fullReply,
+      );
+
+      expect(result).toEqual({
+        type: "success",
+        updatedAt,
+        reply: fullReply,
+      });
+    });
+
+    it("should return fresh response for the empty chat history", async () => {
+      const fullReply = "Fresh reply";
+
+      (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue([]);
+
+      (geminiAiService.generateResponse as jest.Mock).mockResolvedValue(
+        fullReply,
+      );
+
+      (persistChatMessage as jest.Mock).mockResolvedValue({
+        updatedAt,
+      });
+
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        message,
+        chatId,
+        userId,
+      );
+
+      expect(geminiAiService.generateResponse).toHaveBeenCalledWith(
+        message,
+        [],
+      );
+
+      expect(result).toEqual({
+        type: "success",
+        updatedAt,
+        reply: fullReply,
+      });
+    });
+
+    it("should return internal_error if AI generation fails", async () => {
+      (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue([]);
+
+      (geminiAiService.generateResponse as jest.Mock).mockRejectedValue(
+        new Error("AI failure"),
+      );
+
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        message,
+        chatId,
+        userId,
+      );
+
+      expect(result).toEqual({
+        type: "internal_error",
+      });
+
+      expect(StreamChatService.sendUserMessage).not.toHaveBeenCalled();
+      expect(persistChatMessage).not.toHaveBeenCalled();
+    });
+
+    it("should return internal_error if chat history retrieval fails", async () => {
+      (ChatHistoryService.getHistory as jest.Mock).mockRejectedValue(
+        new Error("History failure"),
+      );
+
+      const result: ChatResponse = await ChatService.sendMessageToChatById(
+        message,
+        chatId,
+        userId,
+      );
+
+      expect(result).toEqual({
+        type: "internal_error",
+      });
+
+      expect(geminiAiService.generateResponse).not.toHaveBeenCalled();
+    });
   });
 });

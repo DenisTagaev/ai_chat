@@ -1,5 +1,6 @@
 import request from "supertest";
 import app from "../../server";
+
 import { ChatService } from "../../services/chatService";
 import { ChatHistoryService } from "../../services/chatHistoryService";
 import { ChatResultMapper } from "../../middleware/chatResultMapper";
@@ -9,32 +10,39 @@ jest.mock("../../services/chatHistoryService");
 jest.mock("../../middleware/chatResultMapper");
 
 describe("AI Chat Controller", () => {
-  const validBody = { message: "Hello", userId: "abc123" };
+  const validUserId = "abc123";
+  const validChatId = "chat_123";
+  const validMessage = "Hello";
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  // -----------------------------
-  // handleAiChat
-  // -----------------------------
-  describe("POST api/ai/chat", () => {
-    it("should call ChatService and call mapper for response", async () => {
-      const mockChatResponse = { reply: "Hi there" };
+  // ------------------------------------------
+  // POST /api/ai/chats
+  // ------------------------------------------
 
-      (ChatService.interactWithChat as jest.Mock).mockResolvedValue(
-        mockChatResponse,
-      );
+  describe("POST /api/ai/chats", () => {
+    it("should create a chat and map the response", async () => {
+      const mockChatResponse = {
+        chatId: validChatId,
+        title: "Hello",
+      };
+
+      (ChatService.createChat as jest.Mock).mockResolvedValue(mockChatResponse);
 
       (ChatResultMapper.toHttp as jest.Mock).mockImplementation((res, data) => {
         return res.status(200).json(data);
       });
 
-      const res = await request(app).post("/api/ai/chat").send(validBody);
+      const res = await request(app).post("/api/ai/chats").send({
+        message: validMessage,
+        userId: validUserId,
+      });
 
-      expect(ChatService.interactWithChat).toHaveBeenCalledWith(
-        validBody.message,
-        validBody.userId,
+      expect(ChatService.createChat).toHaveBeenCalledWith(
+        validUserId,
+        validMessage,
       );
 
       expect(ChatResultMapper.toHttp).toHaveBeenCalledWith(
@@ -46,44 +54,109 @@ describe("AI Chat Controller", () => {
       expect(res.body).toEqual(mockChatResponse);
     });
 
-    it("should return 500 if ChatService throws error", async () => {
-      (ChatService.interactWithChat as jest.Mock).mockRejectedValue(
+    it("should return 500 if ChatService.createChat fails", async () => {
+      (ChatService.createChat as jest.Mock).mockRejectedValue(
         new Error("Service failure"),
       );
 
-      const res = await request(app).post("/api/ai/chat").send(validBody);
+      const res = await request(app).post("/api/ai/chats").send({
+        message: validMessage,
+        userId: validUserId,
+      });
 
       expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: "Internal Server Error" });
+      expect(res.body).toEqual({
+        error: "Internal Server Error",
+      });
     });
   });
 
-  // -----------------------------
-  // getUserChatHistory
-  // -----------------------------
-  describe("POST /api/ai/chat-history", () => {
-    it("should return 400 if userId is missing", async () => {
-      const res = await request(app).post("/api/ai/chat-history").send({});
+  // ------------------------------------------
+  // POST /api/ai/chats/:chatId
+  // ------------------------------------------
 
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe("Missing required fields");
+  describe("POST /api/ai/chats/:chatId", () => {
+    it("should send a message to an existing chat and map the response", async () => {
+      const mockChatResponse = {
+        reply: "Hi there",
+      };
+
+      (ChatService.sendMessageToChatById as jest.Mock).mockResolvedValue(
+        mockChatResponse,
+      );
+
+      (ChatResultMapper.toHttp as jest.Mock).mockImplementation((res, data) => {
+        return res.status(200).json(data);
+      });
+
+      const res = await request(app).post(`/api/ai/chats/${validChatId}`).send({
+        message: validMessage,
+        userId: validUserId,
+      });
+
+      expect(ChatService.sendMessageToChatById).toHaveBeenCalledWith(
+        validMessage,
+        validChatId,
+        validUserId,
+      );
+
+      expect(ChatResultMapper.toHttp).toHaveBeenCalledWith(
+        expect.any(Object),
+        mockChatResponse,
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockChatResponse);
     });
 
+    it("should return 500 if ChatService.sendMessageToChatById fails", async () => {
+      (ChatService.sendMessageToChatById as jest.Mock).mockRejectedValue(
+        new Error("Service failure"),
+      );
+
+      const res = await request(app).post(`/api/ai/chats/${validChatId}`).send({
+        message: validMessage,
+        userId: validUserId,
+      });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({
+        error: "Internal Server Error",
+      });
+    });
+  });
+
+  // ------------------------------------------
+  // GET /api/ai/chats/:chatId/history
+  // ------------------------------------------
+
+  describe("GET /api/ai/chats/:chatId/history", () => {
     it("should return chat history", async () => {
-      const mockHistory = [{ message: "Hello", reply: "World" }];
+      const mockHistory = [
+        {
+          message: "Hello",
+          reply: "World",
+        },
+        {
+          message: "How are you?",
+          reply: "I'm good.",
+        },
+      ];
 
       (ChatHistoryService.getHistory as jest.Mock).mockResolvedValue(
         mockHistory,
       );
 
-      const res = await request(app)
-        .post("/api/ai/chat-history")
-        .send({ userId: "abc123" });
+      const res = await request(app).get(
+        `/api/ai/chats/${validChatId}/history`,
+      );
 
-      expect(ChatHistoryService.getHistory).toHaveBeenCalledWith("abc123");
+      expect(ChatHistoryService.getHistory).toHaveBeenCalledWith(validChatId);
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ history: mockHistory });
+      expect(res.body).toEqual({
+        messages: mockHistory,
+      });
     });
 
     it("should return 500 if ChatHistoryService fails", async () => {
@@ -91,12 +164,70 @@ describe("AI Chat Controller", () => {
         new Error("DB failure"),
       );
 
-      const res = await request(app)
-        .post("/api/ai/chat-history")
-        .send({ userId: "abc123" });
+      const res = await request(app).get(
+        `/api/ai/chats/${validChatId}/history`,
+      );
 
       expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: "Internal Server Error" });
+      expect(res.body).toEqual({
+        error: "Internal Server Error",
+      });
+    });
+  });
+
+  // ------------------------------------------
+  // GET /api/ai/chats
+  // ------------------------------------------
+
+  describe("GET /api/ai/chats", () => {
+    it("should return the user's chat sessions", async () => {
+      const mockChatResponse = {
+        type: "success",
+        chats: [],
+      };
+
+      (ChatService.getUserChats as jest.Mock).mockResolvedValue(
+        mockChatResponse,
+      );
+
+      (ChatResultMapper.toHttp as jest.Mock).mockImplementation((res, data) => {
+        return res.status(200).json(data);
+      });
+
+      const res = await request(app)
+        .get("/api/ai/chats")
+        .query({ userId: validUserId });
+
+      expect(ChatService.getUserChats).toHaveBeenCalledWith(validUserId);
+
+      expect(ChatResultMapper.toHttp).toHaveBeenCalledWith(
+        expect.any(Object),
+        mockChatResponse,
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockChatResponse);
+    });
+
+    it("should return 400 if userId is missing", async () => {
+      const res = await request(app).get("/api/ai/chats");
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 500 if ChatService.getUserChats fails", async () => {
+      (ChatService.getUserChats as jest.Mock).mockRejectedValue(
+        new Error("Service failure"),
+      );
+
+      const res = await request(app)
+        .get("/api/ai/chats")
+        .query({ userId: validUserId });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({
+        error: "Internal Server Error",
+      });
     });
   });
 });

@@ -102,7 +102,10 @@ describe("AuthService", () => {
     mockRedis.get.mockResolvedValue(null);
 
     (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "fully_registered",
+      {
+        isNeonUser: true,
+        isStreamUser: true
+      }
     );
 
     const mockHistory: ChatSelect[] = [{ message: "Hi", reply: "Hello" }];
@@ -136,7 +139,10 @@ describe("AuthService", () => {
     mockRedis.get.mockResolvedValue(null);
 
     (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "inconsistent_registration",
+      {
+        isNeonUser: true,
+        isStreamUser: false,
+      }
     );
 
     const auth: AuthResult = await AuthService.authenticateOrRegister(name, email);
@@ -160,7 +166,10 @@ describe("AuthService", () => {
     mockRedis.set.mockResolvedValue(null);
 
     (UserService.getUserRegisterState as jest.Mock).mockResolvedValue(
-      "not_registered",
+      {
+        isNeonUser: false,
+        isStreamUser: false
+      }
     );
 
     (StreamChatService.upsertStreamUser as jest.Mock).mockResolvedValue({});
@@ -173,9 +182,6 @@ describe("AuthService", () => {
 
     expect(StreamChatService.upsertStreamUser).toHaveBeenCalled();
     expect(createNeonUser).toHaveBeenCalledWith(userId, name, normalizedEmail);
-    expect(StreamChatService.getOrCreateChatChannel).toHaveBeenCalledWith(
-      userId,
-    );
 
     expect(mockRedis.set).toHaveBeenCalledWith(
       `user:${normalizedEmail}`,

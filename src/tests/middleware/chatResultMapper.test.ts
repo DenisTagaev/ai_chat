@@ -49,6 +49,7 @@ describe("ChatResultMapper", () => {
   it("should return 200 for successful reply", () => {
     const result: ChatResponse = {
       type: "success",
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       reply: "Hello there!",
     };
 
@@ -57,6 +58,7 @@ describe("ChatResultMapper", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       reply: "Hello there!",
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
   });
 

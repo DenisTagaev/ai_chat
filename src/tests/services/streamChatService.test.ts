@@ -18,7 +18,13 @@ jest.mock("stream-chat", () => ({
 }));
 
 import { StreamChatService } from "../../services/streamChatService";
-import { APIResponse, Channel, SendMessageAPIResponse, StreamChat, UserResponse } from "stream-chat";
+import {
+  APIResponse,
+  Channel,
+  SendMessageAPIResponse,
+  StreamChat,
+  UserResponse,
+} from "stream-chat";
 import { StreamUser } from "../../utils/interfaces";
 
 describe("StreamChatService", () => {
@@ -69,7 +75,7 @@ describe("StreamChatService", () => {
     const user: StreamUser = {
       id: "123",
       email: "test@mail.com",
-      name: "John Doe"
+      name: "John Doe",
     };
 
     mockClient.upsertUser.mockResolvedValue({ users: {} });
@@ -90,10 +96,13 @@ describe("StreamChatService", () => {
   it("should successfully create StreamChat channel", async () => {
     mockChannel.create.mockResolvedValue({});
 
-    const channel: Channel = await StreamChatService.getOrCreateChatChannel("123");
+    const channel: Channel = await StreamChatService.getOrCreateChatChannel(
+      "user-123",
+      "chat-123",
+    );
 
     expect(mockClient.channel).toHaveBeenCalledWith("messaging", "chat-123", {
-      members: ["123"],
+      members: ["user-123"],
       created_by_id: "ai_assistant",
     });
 
@@ -101,13 +110,14 @@ describe("StreamChatService", () => {
     expect(channel).toBe(mockChannel);
   });
 
-  it("should ignore error if channel already exists", async () => {
+  it("should log error if channel already exists", async () => {
     mockChannel.create.mockRejectedValue(new Error("exists"));
 
-    const channel: Channel = await StreamChatService.getOrCreateChatChannel("123");
+    await expect(
+      StreamChatService.getOrCreateChatChannel("user-123", "chat-123"),
+    ).rejects.toThrow("exists");
 
     expect(mockChannel.create).toHaveBeenCalled();
-    expect(channel).toBe(mockChannel);
   });
 
   // -----------------------------
@@ -118,7 +128,7 @@ describe("StreamChatService", () => {
     mockChannel.sendMessage.mockResolvedValue({ success: true });
 
     const message: SendMessageAPIResponse =
-      await StreamChatService.sendMessageToAi("123", "Hello AI");
+      await StreamChatService.sendAiMessage("chat-123", "Hello AI");
 
     expect(mockChannel.sendMessage).toHaveBeenCalledWith({
       text: "Hello AI",
@@ -129,9 +139,9 @@ describe("StreamChatService", () => {
   });
 
   it("should throw an error if message is invalid", async () => {
-    await expect(StreamChatService.sendMessageToAi("123", "")).rejects.toThrow(
-      "AI bot error",
-    );
+    await expect(
+      StreamChatService.sendAiMessage("chat-123", ""),
+    ).rejects.toThrow("AI Error");
   });
 
   // -----------------------------
