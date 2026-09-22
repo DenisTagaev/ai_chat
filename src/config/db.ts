@@ -1,17 +1,17 @@
-import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { config } from "dotenv";
 
 config({ path: '.env'});
 
-if(!process.env.DB_CONNECTION) {
-  throw new Error('Database connection issue');
+const databaseUrl: string | undefined = process.env.DB_CONNECTION;
+
+if(!databaseUrl) {
+  throw new Error("Database environment variable is not configured");
 }
 
 //Connect Neon db
-const sqlClient: NeonQueryFunction<false, false> = neon(
-  process.env.DB_CONNECTION
-);
+const sqlClient = neon(databaseUrl);
 
 //initialize drizzle
 export const db = drizzle({client: sqlClient});
