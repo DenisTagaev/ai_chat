@@ -2,7 +2,7 @@
     import { useUserStore } from '../stores/user';
     import { useRouter } from 'vue-router';
     import { LogOutIcon } from 'lucide-vue-next';
-    import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png';
+    import chatImage from '/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png';
 
     const userStore = useUserStore();
     const router = useRouter();

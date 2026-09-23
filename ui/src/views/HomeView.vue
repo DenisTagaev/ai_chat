@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { defineAsyncComponent } from 'vue'
   import Loader from '../components/Loader.vue'
-  import chatImage from '../assets/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png'
+  import chatImage from '/pngtree-chatbot-messenger-concept-design-man-and-woman-chatting-using-chatbots-assistant-png-image_3829211-removebg-preview.png'
 
   const AuthForm = defineAsyncComponent({
     loader: () => import('../components/auth/AuthForm.vue'),
